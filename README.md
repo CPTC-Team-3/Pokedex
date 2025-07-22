@@ -2,14 +2,14 @@
 
 ## Game Description: 
 You play as a new Pokémon Trainer, you are given a Pokedex to:
-Discover and Collect new Pokémon, View the Stats, Pokémon types, and more. 
+discover and collect new Pokémon, view Pokemon Stats, Pokémon Types,
+and retrieve data from previously collected Pokemon. 
 
 
 # Tech Stack:
 - Language: C#
 - Framework .Net 9.0 (Windows Forms)
 - Database: SQL Server ('PokedexDB')
-- UI Style : Placeholder ****
 
 # How to run the program: 
 1. Download zip file in the repository or clone the repository. 
