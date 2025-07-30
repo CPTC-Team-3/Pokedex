@@ -5,6 +5,10 @@ You play as a new Pokémon Trainer, you are given a Pokedex to:
 discover and collect new Pokémon, view Pokemon Stats, Pokémon Types,
 and retrieve data from previously collected Pokemon. 
 
+## Database Info:
+Example of the database schema and values used in the project: 
+<img src="team-docs/POKE-DATA.png" alt="Database Schema">
+
 
 # Tech Stack:
 - Language: C#
@@ -20,8 +24,11 @@ and retrieve data from previously collected Pokemon.
 And run the SQL script in the `Pokemon.sql` file to create the database and tables.
 6. Run the project by clicking the "Start" button in Visual Studio.
 
+
 # Meet Team #3 <br> (Alphabetical Order):
 - Adelisse Ferris
 - Alex Fischer 
 - Kourtnie Moore
+
+*more information to be added later~~*
 
