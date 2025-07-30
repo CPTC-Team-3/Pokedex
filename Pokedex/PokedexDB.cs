@@ -14,7 +14,7 @@ namespace Pokedex
     /// </summary>
     public class PokedexDB
     {
-        string connectionString = "Data Source=TRAVELING_KP\\SQLEXPRESS;Initial Catalog = PokedexDB; Integrated Security = True; Connect Timeout = 30; Encrypt=False;Trust Server Certificate=True;Application Intent = ReadWrite; Multi Subnet Failover=False";
+        string connectionString = "Data Source=TRAVELING_KP\\SQLEXPRESS;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
 
         // this is a class that will connect the Pokedex to the database
         public PokedexDB()
