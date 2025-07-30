@@ -17,7 +17,7 @@ and retrieve data from previously collected Pokemon.
 3. Ensure you have the required .NET 9.0 installed.
 4. SQL Server 2022 should be installed and running.
 5. Open the SQL Server Management Studio and connect to your server.
-And run the SQL script in the `PokedexDB.sql` file to create the database and tables.
+And run the SQL script in the `Pokemon.sql` file to create the database and tables.
 6. Run the project by clicking the "Start" button in Visual Studio.
 
 # Meet Team #3 <br> (Alphabetical Order):
