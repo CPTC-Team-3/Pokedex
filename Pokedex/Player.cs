@@ -15,17 +15,18 @@ namespace Pokedex
         /// <summary>
         /// The size of the player in pixels.
         /// </summary>
-        public const int Size = 60;
+        public int Size = 60;
 
         /// <summary>
         /// The constructor for the Player class.
         /// </summary>
         /// <param name="startX">The starting X position of the player</param>
         /// <param name="startY">The starting Y position of the player</param>
-        public Player(int startX, int startY)
+        public Player(int startX, int startY, int size)
         {
             X = startX;
             Y = startY;
+            Size = size; // Set the size based on the provided tile size
         }
 
         /// <summary>
