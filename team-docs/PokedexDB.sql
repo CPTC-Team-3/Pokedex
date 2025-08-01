@@ -3,7 +3,6 @@
 USE PokedexDB; 
 SELECT * FROM dbo.Pokemon;
 
-
 --Create TABLE Pokemon ( 
 	--PokemonId INT PRIMARY KEY, 
 	--Name VARCHAR(30), 

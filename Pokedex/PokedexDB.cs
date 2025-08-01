@@ -16,7 +16,7 @@ namespace Pokedex
     {
         // make the connection string a constant and change the data source to localhost 
         // localhost made 
-        string connectionString = "Data Source=TRAVELING_KP\\SQLEXPRESS;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
+        string connectionString = "Data Source=localhost;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
 
         // this is a class that will connect the Pokedex to the database
         public PokedexDB()
@@ -28,6 +28,10 @@ namespace Pokedex
                 // Open the connection to the database
                 connection.Open();
                 // Execute a query to retrieve data from the database
+                // test to see if the connection is working
+                string query = "SELECT * FROM Pokemon"; // Replace with your actual table name
+                SqlCommand command = new SqlCommand(query, connection);
+                command.ExecuteNonQuery();
             }
         }
     }
