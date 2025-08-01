@@ -1,3 +1,6 @@
+-- If you want to create the database for yourself then you can uncomment this
+-- everything below this line section by section and execute it.
+
 -- Create DATABASE PokedexDB;
 
 USE PokedexDB; 

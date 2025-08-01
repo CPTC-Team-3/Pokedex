@@ -10,7 +10,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace Pokedex
 {
     /// <summary>
-    /// 
+    ///  PokedexDB is a class that connects to the Pokedex database.
     /// </summary>
     public class PokedexDB
     {
