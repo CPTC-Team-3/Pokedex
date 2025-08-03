@@ -6,6 +6,7 @@ namespace Pokedex
         {
             InitializeComponent();
             // Initialize the PokedexDB class to connect to the database
+            // test if the connection is sucessful
             try
             {
                 PokedexDB pokedexDB = new PokedexDB();

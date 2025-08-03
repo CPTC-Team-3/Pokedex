@@ -21,6 +21,7 @@ namespace Pokedex
         // this is a class that will connect the Pokedex to the database
         public PokedexDB()
         {
+            // test query to see if the connection is successful
             try
             {
                 using SqlConnection connection = new SqlConnection(connectionString);
@@ -42,16 +43,6 @@ namespace Pokedex
         }
     }
 }
-#region
-/* 
-- UNDER THE OPEN CONNNECTION, EXECUTE QUERY. SELECT ALL FROM TABLE
-- USE READER TO READ DATA. 
+#region Additional Information/Dev Notes
 
-string query = "SELECT * FROM Pokemon";
-SqlCommand command = new SqlCommand(query, connection);
-using (SqlDataReader reader = command.ExecuteReader())
-{
-
-}
- */
 #endregion
