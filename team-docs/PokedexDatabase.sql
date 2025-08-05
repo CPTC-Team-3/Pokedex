@@ -18,7 +18,7 @@ CREATE TABLE Pokemon (
   Attack INT NOT NULL,
   SpecialAttack INT NOT NULL,
   SpecialDefense INT NOT NULL,
-  Speed INT,
+  Speed INT NOT NULL,
   PokemonType1 VARCHAR(35) NOT NULL,
   PokemonType2 VARCHAR(35)
 );
