@@ -23,7 +23,7 @@ namespace Pokedex
         public bool IsWalkable { get; set; }
 
         /// <summary>
-        /// The transition speed for players moving onto this tile.
+        /// The transition speed for players moving onto this tile. (Not implemented yet)
         /// </summary>
         public int? Speed { get; set; } // Nullable for tiles that do not allow players to walk on
 
