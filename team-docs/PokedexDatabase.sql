@@ -1,23 +1,26 @@
 -- If you want to create the database for yourself then you can uncomment this
 -- everything below this line section by section and execute it.
+DROP DATABASE IF EXISTS PokedexDB; 
+Create DATABASE PokedexDB;
+GO 
 
--- Create DATABASE PokedexDB;
 
+-- (localdb)\mssqllocaldb 
 USE PokedexDB; 
-SELECT * FROM dbo.Pokemon;
+--SELECT * FROM dbo.Pokemon;
 
---Create TABLE Pokemon ( 
-	--PokemonId INT PRIMARY KEY, 
-	--Name VARCHAR(30), 
-	--HP INT, 
-	--Defense INT, 
-	--Attack INT,
-	--SpecialAttack INT, 
-	--SpecialDefense INT,
-	--Speed INT, 
-	--PokemonType1 VARCHAR(35), 
-	--PokemonType2 VARCHAR(35) NULL,  -- optionally NULL ! not all Pokemon have two types. 
---);
+Create TABLE Pokemon ( 
+	PokemonId INT PRIMARY KEY, 
+	Name VARCHAR(30), 
+	HP INT, 
+	Defense INT, 
+	Attack INT,
+	SpecialAttack INT, 
+	SpecialDefense INT,
+	Speed INT, 
+	PokemonType1 VARCHAR(35), 
+	PokemonType2 VARCHAR(35) NULL,  -- optionally NULL ! not all Pokemon have two types. 
+);
 
 --INSERT INTO Pokemon (PokemonId, Name, HP, Defense, 
 --Attack, SpecialAttack, SpecialDefense, Speed, PokemonType1, PokemonType2)

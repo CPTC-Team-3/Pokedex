@@ -16,7 +16,7 @@ namespace Pokedex
     {
         // make the connection string a constant and change the data source to localhost 
         // localhost made 
-        string connectionString = "Data Source=localhost;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
+        string connectionString = "Data Source=(localdb)\\mssqllocaldb;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
 
         // this is a class that will connect the Pokedex to the database
         public PokedexDB()
