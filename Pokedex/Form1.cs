@@ -1,31 +1,83 @@
 namespace Pokedex;
 
+/// <summary>
+/// Main form class that handles the game window, rendering, and input processing
+/// </summary>
 public partial class Form1 : Form
 {
-    public int tileSize = 60; // Size of each tile in pixels
+    /// <summary>
+    /// Size of each tile in pixels
+    /// </summary>
+    public int tileSize = 60;
+    
+    /// <summary>
+    /// List of all tiles in the game world
+    /// </summary>
     private List<Tile> tiles;
+    
+    /// <summary>
+    /// The player instance controlled by user input
+    /// </summary>
     private Player player;
+    
+    /// <summary>
+    /// Timer that controls the game loop and update frequency
+    /// </summary>
     private System.Windows.Forms.Timer gameTimer;
-    private const int TARGET_FPS = 60; // Set your desired frame rate here
-    private const int TIMER_INTERVAL = 1000 / TARGET_FPS; // ~16ms for 60 FPS
+    
+    /// <summary>
+    /// Target frames per second for the game
+    /// </summary>
+    private const int TARGET_FPS = 60;
+    
+    /// <summary>
+    /// Interval between timer ticks in milliseconds (calculated from TARGET_FPS)
+    /// </summary>
+    private const int TIMER_INTERVAL = 1000 / TARGET_FPS;
 
-    private const bool DEBUG_MODE = true; // Set to true for debugging features
+    /// <summary>
+    /// Flag to enable debug features and information display
+    /// </summary>
+    private const bool DEBUG_MODE = true;
 
-    // Frame rate monitoring
+    /// <summary>
+    /// Timestamp of the last frame for FPS calculation
+    /// </summary>
     private DateTime lastFrameTime = DateTime.Now;
+    
+    /// <summary>
+    /// Counter for frames rendered in the current second
+    /// </summary>
     private int frameCount = 0;
+    
+    /// <summary>
+    /// Current calculated frames per second
+    /// </summary>
     private double currentFPS = 0;
     
-    // Input handling
+    /// <summary>
+    /// Flag indicating whether the game needs to redraw the screen
+    /// </summary>
     private bool needsRedraw = false;
     
-    // Performance optimization
+    /// <summary>
+    /// Flag indicating whether the game has been initialized and started
+    /// </summary>
     private bool gameStarted = false;
 
-    // Camera offset
+    /// <summary>
+    /// Camera offset in the X direction for centering the view on the player
+    /// </summary>
     private float cameraOffsetX = 0;
+    
+    /// <summary>
+    /// Camera offset in the Y direction for centering the view on the player
+    /// </summary>
     private float cameraOffsetY = 0;
 
+    /// <summary>
+    /// Initializes a new instance of the Form1 class and starts the game
+    /// </summary>
     public Form1()
     {
         InitializeComponent();
@@ -35,6 +87,9 @@ public partial class Form1 : Form
         gameStarted = true;
     }
 
+    /// <summary>
+    /// Initializes and starts the game timer with the specified interval
+    /// </summary>
     private void InitializeGameTimer()
     {
         gameTimer = new System.Windows.Forms.Timer();
@@ -43,6 +98,11 @@ public partial class Form1 : Form
         gameTimer.Start();
     }
 
+    /// <summary>
+    /// Event handler for the game timer tick. Updates game state and handles rendering
+    /// </summary>
+    /// <param name="sender">The source of the event</param>
+    /// <param name="e">Event arguments</param>
     private void GameTimer_Tick(object sender, EventArgs e)
     {
         // Calculate FPS for monitoring
@@ -71,6 +131,9 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Updates the camera position to center on the player
+    /// </summary>
     private void UpdateCamera()
     {
         // Calculate the center of the screen
@@ -84,6 +147,9 @@ public partial class Form1 : Form
         needsRedraw = true;
     }
     
+    /// <summary>
+    /// Calculates and updates the current FPS value
+    /// </summary>
     private void CalculateFPS()
     {
         frameCount++;
@@ -98,6 +164,9 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Sets up the form properties and enables necessary styles for game rendering
+    /// </summary>
     private void SetupForm()
     {
         // Enable the form to receive key events
@@ -116,6 +185,9 @@ public partial class Form1 : Form
                      ControlStyles.ResizeRedraw, true);
     }
 
+    /// <summary>
+    /// Initializes the game world by creating tiles and the player
+    /// </summary>
     private void InitializeGame()
     {
         tiles = new List<Tile>();
@@ -144,6 +216,10 @@ public partial class Form1 : Form
         needsRedraw = true; // Initial draw needed
     }
 
+    /// <summary>
+    /// Handles the rendering of the game world and player
+    /// </summary>
+    /// <param name="e">Paint event arguments containing the graphics context</param>
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
@@ -177,6 +253,10 @@ public partial class Form1 : Form
         g.ResetTransform();
     }
 
+    /// <summary>
+    /// Handles key press events for player movement
+    /// </summary>
+    /// <param name="e">Key event arguments containing the pressed key information</param>
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
@@ -201,6 +281,10 @@ public partial class Form1 : Form
         }
     }
 
+    /// <summary>
+    /// Handles key release events for player movement
+    /// </summary>
+    /// <param name="e">Key event arguments containing the released key information</param>
     protected override void OnKeyUp(KeyEventArgs e)
     {
         base.OnKeyUp(e);

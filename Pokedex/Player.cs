@@ -1,5 +1,8 @@
 namespace Pokedex;
 
+/// <summary>
+/// Represents a player in the game world with movement capabilities
+/// </summary>
 public class Player
 {
     /// <summary>
@@ -17,16 +20,44 @@ public class Player
     /// </summary>
     public int Size = 60;
 
-    // Movement properties
+    /// <summary>
+    /// The actual X coordinate for smooth movement interpolation
+    /// </summary>
     public float ActualX { get; private set; }
+
+    /// <summary>
+    /// The actual Y coordinate for smooth movement interpolation
+    /// </summary>
     public float ActualY { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the player is currently in motion
+    /// </summary>
     public bool IsMoving { get; private set; }
-    public float MovementSpeed { get; private set; } = 5.0f; // Base movement speed
+
+    /// <summary>
+    /// Base movement speed in pixels per frame
+    /// </summary>
+    public float MovementSpeed { get; private set; } = 5.0f;
+
+    /// <summary>
+    /// Target X coordinate for smooth movement
+    /// </summary>
     private float targetX;
+
+    /// <summary>
+    /// Target Y coordinate for smooth movement
+    /// </summary>
     private float targetY;
+
+    /// <summary>
+    /// Current speed multiplier affected by tile properties
+    /// </summary>
     private float currentSpeedMultiplier = 1.0f;
 
-    // Key buffer for movement
+    /// <summary>
+    /// Buffer storing current pressed movement keys
+    /// </summary>
     private string keyBuffer = string.Empty;
 
     /// <summary>
@@ -168,17 +199,29 @@ public class Player
     }
 
     /// <summary>
-    /// Gets the current visual position X coordinate for rendering
+    /// Gets the current visual X coordinate for rendering
     /// </summary>
-    public float GetVisualX() => ActualX;
+    /// <returns>The interpolated X position for smooth movement</returns>
+    public float GetVisualX()
+    {
+        return ActualX;
+    }
 
     /// <summary>
-    /// Gets the current visual position Y coordinate for rendering
+    /// Gets the current visual Y coordinate for rendering
     /// </summary>
-    public float GetVisualY() => ActualY;
+    /// <returns>The interpolated Y position for smooth movement</returns>
+    public float GetVisualY()
+    {
+        return ActualY;
+    }
 
     /// <summary>
-    /// Gets the current key buffer (for debugging)
+    /// Gets the current key buffer for debugging purposes
     /// </summary>
-    public string GetKeyBuffer() => keyBuffer;
+    /// <returns>A string containing the currently pressed movement keys</returns>
+    public string GetKeyBuffer()
+    {
+        return keyBuffer;
+    }
 }

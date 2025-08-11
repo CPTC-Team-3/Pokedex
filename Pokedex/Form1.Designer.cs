@@ -38,7 +38,17 @@
         /// </summary>
         private void InitializeComponent()
         {
+            button1 = new Button();
             SuspendLayout();
+            // 
+            // button1
+            // 
+            button1.Location = new Point(7, 5);
+            button1.Name = "button1";
+            button1.Size = new Size(129, 59);
+            button1.TabIndex = 0;
+            button1.Text = "Open Pokedex\r\n(Not Implemented)";
+            button1.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
@@ -46,11 +56,14 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.SteelBlue;
             ClientSize = new Size(1514, 769);
+            Controls.Add(button1);
             Name = "Form1";
             Text = "Form1";
             ResumeLayout(false);
         }
 
         #endregion
+
+        private Button button1;
     }
 }
