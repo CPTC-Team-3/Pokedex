@@ -17,7 +17,7 @@ public class Player
     /// </summary>
     public int Size = 60;
 
-    // New properties for smooth movement
+    // Movement properties
     public float ActualX { get; private set; }
     public float ActualY { get; private set; }
     public bool IsMoving { get; private set; }
@@ -25,6 +25,9 @@ public class Player
     private float targetX;
     private float targetY;
     private float currentSpeedMultiplier = 1.0f;
+
+    // Key buffer for movement
+    private string keyBuffer = string.Empty;
 
     /// <summary>
     /// The constructor for the Player class.
@@ -43,13 +46,66 @@ public class Player
     }
 
     /// <summary>
-    /// Moves the object by the specified horizontal and vertical offsets, if the target position is walkable.
+    /// Adds a key to the movement buffer
     /// </summary>
-    /// <param name="deltaX">The horizontal offset, in tile units, to move the object.</param>
-    /// <param name="deltaY">The vertical offset, in tile units, to move the object.</param>
-    /// <param name="tiles">A list of tiles representing the grid.</param>
-    /// <returns>True if movement was initiated, false otherwise.</returns>
-    public bool Move(int deltaX, int deltaY, List<Tile> tiles)
+    /// <param name="key">The key to add (must be W, A, S, or D)</param>
+    public void AddKeyToBuffer(char key)
+    {
+        key = char.ToUpper(key);
+        if (!"WASD".Contains(key)) return;
+        
+        // Only add the key if it's not already in the buffer
+        if (!keyBuffer.Contains(key))
+        {
+            keyBuffer += key;
+        }
+    }
+
+    /// <summary>
+    /// Removes a key from the movement buffer
+    /// </summary>
+    /// <param name="key">The key to remove</param>
+    public void RemoveKeyFromBuffer(char key)
+    {
+        key = char.ToUpper(key);
+        keyBuffer = keyBuffer.Replace(key.ToString(), "");
+    }
+
+    /// <summary>
+    /// Attempts to move the player based on the first key in the buffer
+    /// </summary>
+    /// <param name="tiles">The list of tiles in the game</param>
+    /// <returns>True if movement was initiated, false otherwise</returns>
+    private bool TryMoveFromBuffer(List<Tile> tiles)
+    {
+        if (string.IsNullOrEmpty(keyBuffer) || IsMoving) return false;
+
+        int deltaX = 0, deltaY = 0;
+        char firstKey = keyBuffer[0];
+
+        switch (firstKey)
+        {
+            case 'W':
+                deltaY = -1;
+                break;
+            case 'S':
+                deltaY = 1;
+                break;
+            case 'A':
+                deltaX = -1;
+                break;
+            case 'D':
+                deltaX = 1;
+                break;
+        }
+
+        return Move(deltaX, deltaY, tiles);
+    }
+
+    /// <summary>
+    /// Internal movement logic
+    /// </summary>
+    private bool Move(int deltaX, int deltaY, List<Tile> tiles)
     {
         if (IsMoving) return false;
 
@@ -80,38 +136,49 @@ public class Player
     }
 
     /// <summary>
-    /// Updates the smooth movement animation.
+    /// Updates the smooth movement animation and processes the key buffer
     /// </summary>
-    /// <returns>True if still moving, false if reached destination.</returns>
-    public bool UpdateMovement()
+    /// <returns>True if still moving or movement was initiated, false otherwise</returns>
+    public bool UpdateMovement(List<Tile> tiles)
     {
-        if (!IsMoving) return false;
-
-        float speed = MovementSpeed * currentSpeedMultiplier;
-        float dx = targetX - ActualX;
-        float dy = targetY - ActualY;
-        float distance = (float)Math.Sqrt(dx * dx + dy * dy);
-
-        if (distance < 1)
+        if (IsMoving)
         {
-            ActualX = targetX;
-            ActualY = targetY;
-            IsMoving = false;
-            return false;
-        }
+            float speed = MovementSpeed * currentSpeedMultiplier;
+            float dx = targetX - ActualX;
+            float dy = targetY - ActualY;
+            float distance = (float)Math.Sqrt(dx * dx + dy * dy);
 
-        ActualX += (dx / distance) * speed;
-        ActualY += (dy / distance) * speed;
-        return true;
+            if (distance < 1)
+            {
+                ActualX = targetX;
+                ActualY = targetY;
+                IsMoving = false;
+                // Try to move again immediately if there are keys in the buffer
+                return TryMoveFromBuffer(tiles);
+            }
+
+            ActualX += (dx / distance) * speed;
+            ActualY += (dy / distance) * speed;
+            return true;
+        }
+        else
+        {
+            return TryMoveFromBuffer(tiles);
+        }
     }
 
     /// <summary>
-    /// Gets the current visual position X coordinate for rendering.
+    /// Gets the current visual position X coordinate for rendering
     /// </summary>
     public float GetVisualX() => ActualX;
 
     /// <summary>
-    /// Gets the current visual position Y coordinate for rendering.
+    /// Gets the current visual position Y coordinate for rendering
     /// </summary>
     public float GetVisualY() => ActualY;
+
+    /// <summary>
+    /// Gets the current key buffer (for debugging)
+    /// </summary>
+    public string GetKeyBuffer() => keyBuffer;
 }

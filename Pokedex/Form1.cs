@@ -18,8 +18,6 @@ public partial class Form1 : Form
     
     // Input handling
     private bool needsRedraw = false;
-    private DateTime lastKeyPress = DateTime.MinValue;
-    private const int KEY_COOLDOWN_MS = 150; // Minimum time between key presses
     
     // Performance optimization
     private bool gameStarted = false;
@@ -47,7 +45,7 @@ public partial class Form1 : Form
         CalculateFPS();
         
         // Update player movement
-        if (player.UpdateMovement())
+        if (player.UpdateMovement(tiles))
         {
             needsRedraw = true;
         }
@@ -57,6 +55,12 @@ public partial class Form1 : Form
         {
             Invalidate();
             needsRedraw = false;
+        }
+
+        // Update debug info if needed
+        if (DEBUG_MODE)
+        {
+            this.Text = $"Pokedex Game - FPS: {currentFPS:F1} - Keys: {player.GetKeyBuffer()}";
         }
     }
     
@@ -71,12 +75,6 @@ public partial class Form1 : Form
             currentFPS = frameCount / elapsed;
             frameCount = 0;
             lastFrameTime = now;
-            
-            // Update window title with FPS (optional - for debugging)
-            if (gameStarted && DEBUG_MODE)
-            {
-                this.Text = $"Pokedex Game - FPS: {currentFPS:F1}";
-            }
         }
     }
 
@@ -156,53 +154,43 @@ public partial class Form1 : Form
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        
-        // Implement key cooldown to prevent rapid movement
-        var now = DateTime.Now;
-        if ((now - lastKeyPress).TotalMilliseconds < KEY_COOLDOWN_MS)
+
+        char? keyChar = e.KeyCode switch
         {
-            return;
+            Keys.W or Keys.Up => 'W',
+            Keys.A or Keys.Left => 'A',
+            Keys.S or Keys.Down => 'S',
+            Keys.D or Keys.Right => 'D',
+            Keys.Escape => null,
+            _ => null
+        };
+
+        if (keyChar.HasValue)
+        {
+            player.AddKeyToBuffer(keyChar.Value);
         }
-
-        int deltaX = 0, deltaY = 0;
-
-        switch (e.KeyCode)
+        else if (e.KeyCode == Keys.Escape)
         {
-            case Keys.W:
-            case Keys.Up:
-                deltaY = -1;
-                break;
-            case Keys.S:
-            case Keys.Down:
-                deltaY = 1;
-                break;
-            case Keys.A:
-            case Keys.Left:
-                deltaX = -1;
-                break;
-            case Keys.D:
-            case Keys.Right:
-                deltaX = 1;
-                break;
-            case Keys.Escape:
-                // Optional: Allow ESC to quit
-                this.Close();
-                return;
+            this.Close();
         }
+    }
 
-        if (deltaX != 0 || deltaY != 0)
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        base.OnKeyUp(e);
+
+        char? keyChar = e.KeyCode switch
         {
-            var oldX = player.X;
-            var oldY = player.Y;
-            
-            player.Move(deltaX, deltaY, tiles);
-            
-            // Only flag for redraw if player actually moved
-            if (player.X != oldX || player.Y != oldY)
-            {
-                needsRedraw = true;
-                lastKeyPress = now;
-            }
+            Keys.W or Keys.Up => 'W',
+            Keys.A or Keys.Left => 'A',
+            Keys.S or Keys.Down => 'S',
+            Keys.D or Keys.Right => 'D',
+            _ => null
+        };
+
+        if (keyChar.HasValue)
+        {
+            player.RemoveKeyFromBuffer(keyChar.Value);
         }
     }
     
