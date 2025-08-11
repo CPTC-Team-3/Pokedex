@@ -22,6 +22,10 @@ public partial class Form1 : Form
     // Performance optimization
     private bool gameStarted = false;
 
+    // Camera offset
+    private float cameraOffsetX = 0;
+    private float cameraOffsetY = 0;
+
     public Form1()
     {
         InitializeComponent();
@@ -49,6 +53,9 @@ public partial class Form1 : Form
         {
             needsRedraw = true;
         }
+
+        // Update camera position
+        UpdateCamera();
         
         // Only redraw if something has changed
         if (needsRedraw)
@@ -62,6 +69,19 @@ public partial class Form1 : Form
         {
             this.Text = $"Pokedex Game - FPS: {currentFPS:F1} - Keys: {player.GetKeyBuffer()}";
         }
+    }
+
+    private void UpdateCamera()
+    {
+        // Calculate the center of the screen
+        float screenCenterX = ClientSize.Width / 2f;
+        float screenCenterY = ClientSize.Height / 2f;
+
+        // Calculate where the camera should be to center on the player
+        cameraOffsetX = screenCenterX - player.GetVisualX() - (tileSize / 2f);
+        cameraOffsetY = screenCenterY - player.GetVisualY() - (tileSize / 2f);
+        
+        needsRedraw = true;
     }
     
     private void CalculateFPS()
@@ -135,6 +155,9 @@ public partial class Form1 : Form
         g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
         g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
 
+        // Apply camera transform
+        g.TranslateTransform(cameraOffsetX, cameraOffsetY);
+
         // Draw tiles
         foreach (var tile in tiles)
         {
@@ -149,6 +172,9 @@ public partial class Form1 : Form
         {
             g.FillRectangle(playerBrush, player.GetVisualX(), player.GetVisualY(), player.Size, player.Size);
         }
+
+        // Reset transform
+        g.ResetTransform();
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
