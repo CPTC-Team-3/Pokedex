@@ -23,9 +23,10 @@ namespace Pokedex
         public bool IsWalkable { get; set; }
 
         /// <summary>
-        /// The transition speed for players moving onto this tile. (Not implemented yet)
+        /// The transition speed multiplier for players moving from this tile.
+        /// 1.0 is normal speed, 2.0 is double speed, 0.5 is half speed.
         /// </summary>
-        public int? Speed { get; set; } // Nullable for tiles that do not allow players to walk on
+        public float Speed { get; set; }
 
         /// <summary>
         /// The constructor for the Tile class.
@@ -34,8 +35,8 @@ namespace Pokedex
         /// <param name="y">The Y position of this tile</param>
         /// <param name="color">The rendering color of this tile</param>
         /// <param name="isWalkable">A value indicating whether this tile can be used for walking</param>
-        /// <param name="speed">The transition speed for players moving onto this tile</param>
-        public Tile(int x, int y, Color color, bool isWalkable, int? speed = null)
+        /// <param name="speed">The transition speed multiplier for players moving from this tile (default is 1.0)</param>
+        public Tile(int x, int y, Color color, bool isWalkable, float speed = 1.0f)
         {
             X = x;
             Y = y;

@@ -46,6 +46,12 @@ public partial class Form1 : Form
         // Calculate FPS for monitoring
         CalculateFPS();
         
+        // Update player movement
+        if (player.UpdateMovement())
+        {
+            needsRedraw = true;
+        }
+        
         // Only redraw if something has changed
         if (needsRedraw)
         {
@@ -102,9 +108,17 @@ public partial class Form1 : Form
         {
             for (int y = 0; y < mapY; y++)
             {
-                bool isWalkable = (x + y) % 10 != 0; // Example logic for walkability
-                Color color = isWalkable ? Color.Green : Color.Gray;
-                tiles.Add(new Tile(x * tileSize, y * tileSize, color, isWalkable));
+                bool isSand = (x + y) % 10 >= 3; // Example logic for sand tiles
+                Color color = isSand ? Color.SandyBrown : Color.Green;
+                float speed = isSand ? 0.5f : 1.0f; // Sand tiles are slower
+
+                bool isWalkable = (x + y) % 15 != 0 || (x + y) % 5 <= 1; // Example logic for walkable tiles
+                if(!isWalkable)
+                {
+                    color = Color.Gray; // Non-walkable tiles are gray
+                }
+
+                tiles.Add(new Tile(x * tileSize, y * tileSize, color, isWalkable, speed));
             }
         }
 
@@ -132,10 +146,10 @@ public partial class Form1 : Form
             }
         }
 
-        // Draw player
+        // Draw player using actual position for smooth movement
         using (Brush playerBrush = new SolidBrush(Color.Blue))
         {
-            g.FillRectangle(playerBrush, player.X, player.Y, player.Size, player.Size);
+            g.FillRectangle(playerBrush, player.GetVisualX(), player.GetVisualY(), player.Size, player.Size);
         }
     }
 
