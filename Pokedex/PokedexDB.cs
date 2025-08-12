@@ -11,12 +11,15 @@ namespace Pokedex
 {
     /// <summary>
     ///  PokedexDB is a class that connects to the Pokedex database.
-    /// </summary>
+    ///  This is the previous connectionString that was used:       
+    /// // string connectionString = "Data Source=localhost;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";    /// </summary>
     public class PokedexDB
     {
         // make the connection string a constant and change the data source to localhost 
         // localhost made 
-        string connectionString = "Data Source=localhost;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
+        string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
+        
+        //string connectionString = "Data Source=localhost;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
 
         // this is a class that will connect the Pokedex to the database
         public PokedexDB()
