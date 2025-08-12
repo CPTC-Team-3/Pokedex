@@ -7,14 +7,19 @@ namespace Pokedex;
 /// </summary>
 public class PokedexDB
 {
-    // make the connection string a constant and change the data source to localhost 
-    // localhost made 
-    string connectionString = "Data Source=localhost;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
+    // (localdb) connection string
+    string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
 
-    // this is a class that will connect the Pokedex to the database
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PokedexDB"/> class and attempts to establish a connection to the
+    /// database.
+    /// </summary>
+    /// <remarks>This constructor tests the database connection by opening a connection to the database and
+    /// executing a simple query. If the connection is successful, a confirmation message is displayed. If the
+    /// connection fails, an error message is shown.</remarks>
+    /// 
     public PokedexDB()
     {
-        // test query to see if the connection is successful
         try
         {
             using SqlConnection connection = new SqlConnection(connectionString);
@@ -33,8 +38,31 @@ public class PokedexDB
             // If connection fails, show error message
             MessageBox.Show($"Failed to connect to database:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+
     }
+    // create a method to get all user collected pokemon 
+
+    public void GetAllCollectedPokemon()
+    {
+        // use try/catch to handle exceptions 
+
+        // create a connection to the database again
+
+        // create a query to get all collected pokemon from collectedpokemon table
+    }
+
+
+
 }
 #region Additional Information/Dev Notes
+/*
+ * CREATE TABLE CollectedPokemon (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    PokemonId INT NOT NULL,
+    UserId INT NOT NULL,
+    FOREIGN KEY (PokemonId) REFERENCES Pokemon(Id), references the pokemon table and gets the information from it
+    FOREIGN KEY (UserId) REFERENCES Users(Id)
+);
+*/
 
 #endregion
