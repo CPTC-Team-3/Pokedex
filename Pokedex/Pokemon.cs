@@ -27,29 +27,29 @@ namespace Pokedex
         /// Determines the power of a Pokemon's attack.
         /// </summary>
 
-        public byte Attack { get; set; }
+        public int Attack { get; set; }
 
         /// <summary>
         /// Determines the amount of damage a Pokemon will resist.
         /// </summary>
 
-        public byte Defense { get; set; }
+        public int Defense { get; set; }
 
         /// <summary>
         /// Determines the power of a Pokemon's special attack.
         /// </summary>
 
-        public byte SpAttack { get; set; }
+        public int SpAttack { get; set; }
 
         /// <summary>
         /// Determines how much damage a Pokemon will resist from special attacks.  
         /// </summary>
-        public byte SpDefense { get; set; }
+        public int SpDefense { get; set; }
 
         /// <summary>
         /// Determines the speed of a Pokemon. (This is important for determining which pokemon attacks first in battle.)
         /// </summary>
-        public byte Speed { get; set; }
+        public int Speed { get; set; }
 
         /// <summary>
         /// The Pokmon's primary type.
