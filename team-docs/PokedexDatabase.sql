@@ -10,6 +10,7 @@ GO
 USE PokedexDB;
 GO
 
+-- Create the Pokemon table to store Pokémon data
 CREATE TABLE Pokemon (
   PokemonId INT PRIMARY KEY IDENTITY(1, 1),
   Name VARCHAR(35) NOT NULL,
@@ -22,6 +23,41 @@ CREATE TABLE Pokemon (
   PokemonType1 VARCHAR(35) NOT NULL,
   PokemonType2 VARCHAR(35)
 );
+
+-- Users table to manage user accounts, 
+-- includes the trainer level which can increase with experience
+CREATE TABLE Users (
+	UserId INT PRIMARY KEY IDENTITY(1,1),
+	Username VARCHAR(50) NOT NULL,
+	Password VARCHAR(255) NOT NULL,
+	Email VARCHAR(100) NOT NULL,
+	TrainerLevel INT NOT NULL DEFAULT 1
+);
+
+-- CollectedPokemon table to track which Pokémon each user has collected
+CREATE TABLE CollectedPokemon (
+	UserId INT,
+	PokemonId INT,
+	Name VARCHAR(35) NOT NULL,
+	Level INT NOT NULL DEFAULT 1,
+	HP INT NOT NULL,
+	Defense INT NOT NULL,
+	Attack INT NOT NULL,
+	SpecialAttack INT NOT NULL,
+	SpecialDefense INT NOT NULL,
+	Speed INT NOT NULL,
+	PokemonType1 VARCHAR(35) NOT NULL,
+	PokemonType2 VARCHAR(35),
+
+	-- Primary key to ensure each user can only have one entry per Pokémon
+	PRIMARY KEY (UserId, PokemonId),
+
+	-- References to other tables
+	FOREIGN KEY (UserId) REFERENCES Users(UserId),
+	FOREIGN KEY (PokemonId) REFERENCES Pokemon(PokemonId)
+);
+
+
 
 INSERT INTO Pokemon (Name, HP, Defense, Attack, SpecialAttack, SpecialDefense, Speed, PokemonType1, PokemonType2)
 VALUES

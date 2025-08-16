@@ -57,10 +57,10 @@ public class PokedexDB
 #region Additional Information/Dev Notes
 /*
  * CREATE TABLE CollectedPokemon (
-    Id INT PRIMARY KEY IDENTITY(1,1),
-    PokemonId INT NOT NULL,
+    PokemonID INT NOT NULL,
     UserId INT NOT NULL,
-    FOREIGN KEY (PokemonId) REFERENCES Pokemon(Id), references the pokemon table and gets the information from it
+    PRIMARY KEY (PokemonID, UserId),
+    FOREIGN KEY (PokemonId) REFERENCES Pokemon(Id), : references the pokemon table and gets the information from it
     FOREIGN KEY (UserId) REFERENCES Users(Id)
 );
 */
