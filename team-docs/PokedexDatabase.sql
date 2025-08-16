@@ -55,6 +55,7 @@ CREATE TABLE CollectedPokemon (
 	-- References to other tables
 	FOREIGN KEY (UserId) REFERENCES Users(UserId),
 	FOREIGN KEY (PokemonId) REFERENCES Pokemon(PokemonId)
+	-- The rest of the stats aren't being referenced here,~~PLEASE FIX~~~!!!!!!
 );
 
 
