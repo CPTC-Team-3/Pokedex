@@ -40,20 +40,32 @@ public class PokedexDB
         }
 
     }
-   
+
     // ~~DEV NOTE: 8/18/2025
     // public List<CollectedPokemon> GetAllCollectedPokemon(string username)
     // ^^ This method will retrieve all collected pokemon for a specific user. N
     // o two users can have the same username, so we can use that to get the user id and then get all pokemon for that user id.
-    public void GetAllCollectedPokemon() // this will be replace with the above method
+    public List<CollectedPokemon> GetAllCollectedPokemon(string username) // this will be replace with the above method
     {
+        List<CollectedPokemon> collectedList = new List<CollectedPokemon>();
         // use try/catch to handle exceptions 
 
         // create a connection to the database again
 
         // create a query to get all collected pokemon from collectedpokemon table
+        return collectedList;  
     }
 
+    /// <summary>
+    /// Gets or sets the collection of Pokémon that have been collected.
+    /// </summary>
+    public List<CollectedPokemon> MyCollection { get; set; }
+
+    public void RetrieveUserCollection()
+    {
+        PokedexDB db = new PokedexDB();
+        MyCollection = db.GetAllCollectedPokemon("Ash");
+    }
 
 
 }

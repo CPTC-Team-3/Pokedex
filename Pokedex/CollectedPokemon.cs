@@ -12,7 +12,7 @@ namespace Pokedex
     public class CollectedPokemon
     {
         // Should the PokemonID be included here?
-        public string Name { get; set; }
+        public required string Name { get; set; }
 		public int Level { get; set; } = 1;
 		public int HP { get; set; }
 		public int Defense { get; set; }
@@ -20,7 +20,7 @@ namespace Pokedex
 		public int SpAttack { get; set; }	
 		public int SpDefense { get; set; }
 		public int Speed { get; set; }
-		public string PokemonType1 { get; set; }
+		public required string PokemonType1 { get; set; }
 		public string? PokemonType2 { get; set; }
 
 
