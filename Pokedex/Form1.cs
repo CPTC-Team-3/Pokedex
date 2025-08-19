@@ -146,7 +146,7 @@ public partial class Form1 : Form
         if (DEBUG_MODE)
         {
             string spriteInfo = player.HasSpriteSheet ? 
-                $" - Dir: {player.CurrentDirection} - Frame: {player.GetCurrentFrame()} - Zoom: {player.GetZoomLevel():F1}x" : 
+                $" - Dir: {player.CurrentDirection} - Frame: {player.GetCurrentFrame()}" : 
                 " - No Sprite";
             this.Text = $"Pokedex Game - FPS: {currentFPS:F1} - Keys: {player.GetKeyBuffer()}{spriteInfo}";
         }
@@ -394,23 +394,6 @@ public partial class Form1 : Form
         else if (e.KeyCode == Keys.Escape)
         {
             this.Close();
-        }
-        // Add zoom controls
-        else if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
-        {
-            player.ZoomIn(0.1f);
-            needsRedraw = true;
-        }
-        else if (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus)
-        {
-            player.ZoomOut(0.1f);
-            needsRedraw = true;
-        }
-        else if (e.KeyCode == Keys.R)
-        {
-            // Reset zoom to normal
-            player.SetZoomLevel(1.0f);
-            needsRedraw = true;
         }
     }
 

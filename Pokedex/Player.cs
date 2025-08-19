@@ -192,33 +192,6 @@ public class Player
     }
 
     /// <summary>
-    /// Sets the zoom level for the player sprite texture
-    /// </summary>
-    /// <param name="zoomLevel">The zoom level (1.0 is normal, higher values zoom in, lower values zoom out)</param>
-    public void SetZoomLevel(float zoomLevel)
-    {
-        ZoomLevel = Math.Clamp(zoomLevel, MinZoomLevel, MaxZoomLevel);
-    }
-
-    /// <summary>
-    /// Increases the zoom level by the specified amount
-    /// </summary>
-    /// <param name="amount">Amount to increase zoom (default: 0.1)</param>
-    public void ZoomIn(float amount = 0.1f)
-    {
-        SetZoomLevel(ZoomLevel + amount);
-    }
-
-    /// <summary>
-    /// Decreases the zoom level by the specified amount
-    /// </summary>
-    /// <param name="amount">Amount to decrease zoom (default: 0.1)</param>
-    public void ZoomOut(float amount = 0.1f)
-    {
-        SetZoomLevel(ZoomLevel - amount);
-    }
-
-    /// <summary>
     /// Gets the current sprite frame rectangle from the sprite sheet with zoom cropping applied.
     /// The cropping maintains the same output size while showing a zoomed portion of the texture.
     /// </summary>
@@ -250,36 +223,12 @@ public class Player
             SpriteHeight
         );
 
-        // Apply zoom cropping if zoom level is not 1.0
-        if (Math.Abs(ZoomLevel - 1.0f) > 0.001f)
-        {
-            return GetZoomedSpriteFrame(baseSpriteRect);
-        }
-
-        return baseSpriteRect;
-    }
-
-    /// <summary>
-    /// Calculates the cropped sprite frame rectangle based on the current zoom level.
-    /// Higher zoom levels crop more from the edges to create a zoom effect.
-    /// </summary>
-    /// <param name="baseSpriteRect">The original sprite frame rectangle</param>
-    /// <returns>Cropped rectangle that creates the zoom effect</returns>
-    private Rectangle GetZoomedSpriteFrame(Rectangle baseSpriteRect)
-    {
-        // Calculate the crop amount based on zoom level
-        // When zoom > 1.0, we crop from edges to show a smaller portion of the texture
-        // When zoom < 1.0, we expand the view (limited by sprite boundaries)
-        
+        // Calculate zoom cropping inline
         float cropFactor = 1.0f / ZoomLevel;
         
         // Calculate new dimensions (smaller when zoomed in)
-        int croppedWidth = (int)(baseSpriteRect.Width * cropFactor);
-        int croppedHeight = (int)(baseSpriteRect.Height * cropFactor);
-        
-        // Ensure minimum size to prevent issues
-        croppedWidth = Math.Max(croppedWidth, 1);
-        croppedHeight = Math.Max(croppedHeight, 1);
+        int croppedWidth = Math.Max((int)(baseSpriteRect.Width * cropFactor), 1);
+        int croppedHeight = Math.Max((int)(baseSpriteRect.Height * cropFactor), 1);
         
         // Calculate centering offsets to crop from all edges equally
         int offsetX = (baseSpriteRect.Width - croppedWidth) / 2;
@@ -306,15 +255,6 @@ public class Player
     /// Gets whether the sprite should be flipped horizontally (for West direction).
     /// </summary>
     public bool ShouldFlipHorizontally => CurrentDirection == Direction.West;
-
-    /// <summary>
-    /// Gets the current zoom level for debugging purposes
-    /// </summary>
-    /// <returns>The current zoom level value</returns>
-    public float GetZoomLevel()
-    {
-        return ZoomLevel;
-    }
 
     /// <summary>
     /// Adds a key to the movement buffer
