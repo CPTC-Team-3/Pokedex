@@ -10,6 +10,7 @@ namespace Pokedex
     /// This class represents a user in the Pokedex application. It keeps track of user information such as username, 
     /// password, email, and trainer level. So that we can specify each user and which pokemon they have collected.
     /// </summary>
+    
     public class User
     {
         public int UserId { get; set; }
