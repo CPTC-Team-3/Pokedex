@@ -82,21 +82,26 @@ public partial class Form1 : Form
     {
         InitializeComponent();
         
-        // Initialize the PokedexDB class to connect to the database
-        // test if the connection is sucessful
-        try
-        {
-            PokedexDB pokedexDB = new PokedexDB();
-        }
-        catch (Exception ex)
-        {
-            // If there is an error initializing the database connection, show an error message
-            MessageBox.Show($"ERROR DATABASE CONNECTION ERROR OCCURRED", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
+        //// Initialize the PokedexDB class to connect to the database
+        //// test if the connection is sucessful
+        //try
+        //{
+        //    PokedexDB pokedexDB = new PokedexDB();
+        //}
+        //catch (Exception ex)
+        //{
+        //    // If there is an error initializing the database connection, show an error message
+        //    MessageBox.Show($"ERROR DATABASE CONNECTION ERROR OCCURRED", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //}
         
         InitializeGame();
         SetupForm();
         InitializeGameTimer();
+        
+        // Try to load textures from the textures folder in the application lib folder.
+        string texturesPath = Path.Combine(Application.StartupPath, "lib/textures");
+        LoadTextures(texturesPath);
+        
         gameStarted = true;
     }
 
@@ -140,7 +145,10 @@ public partial class Form1 : Form
         // Update debug info if needed
         if (DEBUG_MODE)
         {
-            this.Text = $"Pokedex Game - FPS: {currentFPS:F1} - Keys: {player.GetKeyBuffer()}";
+            string spriteInfo = player.HasSpriteSheet ? 
+                $" - Dir: {player.CurrentDirection} - Frame: {player.GetCurrentFrame()}" : 
+                " - No Sprite";
+            this.Text = $"Pokedex Game - FPS: {currentFPS:F1} - Keys: {player.GetKeyBuffer()}{spriteInfo}";
         }
     }
 
@@ -221,12 +229,66 @@ public partial class Form1 : Form
                     color = Color.Gray; // Non-walkable tiles are gray
                 }
 
-                tiles.Add(new Tile(x * tileSize, y * tileSize, color, isWalkable, speed));
+                Tile tile = new Tile(x * tileSize, y * tileSize, color, isWalkable, speed);
+                
+                // Try to load tile textures (you can add your texture files here)
+                // Example: tile.SetTexture($"Textures/Tiles/{(isSand ? "sand" : "grass")}.png");
+                
+                tiles.Add(tile);
             }
         }
 
         player = new Player(0, 0, tileSize); // Start player at the top-left corner
+        
+        // Try to load player sprite sheet (you can add your sprite sheet file here)
+        // Example: player.SetSpriteSheet("Textures/Player/player_spritesheet.png", 32, 32);
+        
         needsRedraw = true; // Initial draw needed
+    }
+
+    /// <summary>
+    /// Loads textures for tiles and player from the specified directory.
+    /// Call this method after InitializeGame() to load your texture files.
+    /// </summary>
+    /// <param name="texturesDirectory">Path to the directory containing texture files</param>
+    public void LoadTextures(string texturesDirectory)
+    {
+        if (!Directory.Exists(texturesDirectory))
+        {
+            return;
+        }
+
+        // Load player sprite sheet
+        string playerSpritePath = Path.Combine(texturesDirectory, "Player.png");
+        if (File.Exists(playerSpritePath))
+        {
+            player.SetSpriteSheet(playerSpritePath, 32, 32);
+        }
+
+
+        // Example: Load different textures for different tile types
+        string grassTexturePath = Path.Combine(texturesDirectory, "Grass.png");
+        string sandTexturePath = Path.Combine(texturesDirectory, "Sand.png");
+        string rockTexturePath = Path.Combine(texturesDirectory, "Rock.png");
+
+        foreach (var tile in tiles)
+        {
+            if (tile.TileColor == Color.Green && File.Exists(grassTexturePath))
+            {
+                tile.SetTexture(grassTexturePath);
+            }
+            else if (tile.TileColor == Color.SandyBrown && File.Exists(sandTexturePath))
+            {
+                tile.SetTexture(sandTexturePath);
+            }
+            else if (tile.TileColor == Color.Gray && File.Exists(rockTexturePath))
+            {
+                tile.SetTexture(rockTexturePath);
+            }
+        }
+        
+
+        needsRedraw = true;
     }
 
     /// <summary>
@@ -250,15 +312,57 @@ public partial class Form1 : Form
         // Draw tiles
         foreach (var tile in tiles)
         {
-            using (Brush brush = new SolidBrush(tile.TileColor))
+            if (tile.HasTexture)
             {
-                g.FillRectangle(brush, tile.X, tile.Y, tileSize, tileSize);
+                // Draw tile texture
+                g.DrawImage(tile.Texture!, tile.X, tile.Y, tileSize, tileSize);
+            }
+            else
+            {
+                // Fall back to color rendering
+                using (Brush brush = new SolidBrush(tile.TileColor))
+                {
+                    g.FillRectangle(brush, tile.X, tile.Y, tileSize, tileSize);
+                }
             }
         }
-        // Draw player using actual position for smooth movement
-        using (Brush playerBrush = new SolidBrush(Color.Blue))
+
+        // Draw player
+        if (player.HasSpriteSheet)
         {
-            g.FillRectangle(playerBrush, player.GetVisualX(), player.GetVisualY(), player.Size, player.Size);
+            // Draw player using sprite sheet animation
+            Rectangle sourceRect = player.GetCurrentSpriteFrame();
+            RectangleF destRect = new RectangleF(player.GetVisualX(), player.GetVisualY(), player.Size, player.Size);
+
+            if (player.ShouldFlipHorizontally)
+            {
+                // Save the current graphics state
+                var state = g.Save();
+                
+                // Translate to the center of the sprite, flip horizontally, then translate back
+                g.TranslateTransform(destRect.X + destRect.Width / 2, destRect.Y + destRect.Height / 2);
+                g.ScaleTransform(-1, 1);
+                g.TranslateTransform(-destRect.Width / 2, -destRect.Height / 2);
+                
+                // Draw the sprite
+                g.DrawImage(player.SpriteSheet!, new RectangleF(0, 0, destRect.Width, destRect.Height), sourceRect, GraphicsUnit.Pixel);
+                
+                // Restore the graphics state
+                g.Restore(state);
+            }
+            else
+            {
+                // Draw normally
+                g.DrawImage(player.SpriteSheet!, destRect, sourceRect, GraphicsUnit.Pixel);
+            }
+        }
+        else
+        {
+            // Fall back to color rendering for player
+            using (Brush playerBrush = new SolidBrush(Color.Blue))
+            {
+                g.FillRectangle(playerBrush, player.GetVisualX(), player.GetVisualY(), player.Size, player.Size);
+            }
         }
 
         // Reset transform
