@@ -35,7 +35,7 @@ public class PokedexDB
             // If connection fails, show error message
             MessageBox.Show($"Failed to connect to database:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-
+    }
         /// <summary>
         /// Looks up a Pokemon by its name in the database and returns the Pokemon's details.
         /// </summary>
@@ -95,7 +95,6 @@ public class PokedexDB
             }
             return null;
         }
-    }
     // In the database class we now need to store users collected pokemon 
 
     public void CollectedPokemon()
