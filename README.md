@@ -1,8 +1,8 @@
 # Pokedex - <br> CPW 211 Teams Project 
 
 ## Game Description: 
-You play as a new Pokémon Trainer, you are given a Pokedex to:
-discover and collect new Pokémon, view Pokemon Stats, Pokémon Types,
+You play as a new PokÃ©mon Trainer, you are given a Pokedex to:
+discover and collect new PokÃ©mon, view Pokemon Stats, PokÃ©mon Types,
 and retrieve data from previously collected Pokemon. 
 
 ## Database Info:
@@ -30,5 +30,7 @@ And run the SQL script in the `Pokemon.sql` file to create the database and tabl
 - Alex Fischer 
 - Kourtnie Moore
 
-*more information to be added later~~*
+## Special Thanks to: <br>
+- Joeseph Ortiz
 
+*more information to be added later~~*
