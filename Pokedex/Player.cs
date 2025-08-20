@@ -41,6 +41,41 @@ public class Player
     public float MovementSpeed { get; private set; } = 5.0f;
 
     /// <summary>
+    /// The sprite sheet image for the player character.
+    /// </summary>
+    public Image? SpriteSheet { get; set; }
+
+    /// <summary>
+    /// Width of each sprite frame in the sprite sheet.
+    /// </summary>
+    public int SpriteWidth { get; set; } = 32;
+
+    /// <summary>
+    /// Height of each sprite frame in the sprite sheet.
+    /// </summary>
+    public int SpriteHeight { get; set; } = 32;
+
+    /// <summary>
+    /// Current animation frame index (0-3).
+    /// </summary>
+    private int currentFrame = 0;
+
+    /// <summary>
+    /// Animation frame counter for timing.
+    /// </summary>
+    private int animationCounter = 0;
+
+    /// <summary>
+    /// Frames between animation updates.
+    /// </summary>
+    private int animationSpeed = 4;
+
+    /// <summary>
+    /// Current facing direction for sprite selection.
+    /// </summary>
+    public Direction CurrentDirection { get; private set; } = Direction.Down;
+
+    /// <summary>
     /// Target X coordinate for smooth movement
     /// </summary>
     private float targetX;
@@ -61,10 +96,37 @@ public class Player
     private string keyBuffer = string.Empty;
 
     /// <summary>
+    /// Current zoom level for the player sprite. 1.0 is normal size, 2.0 is double zoom, 0.5 is half zoom.
+    /// </summary>
+    public float ZoomLevel { get; set; } = 1.5f;
+
+    /// <summary>
+    /// Minimum allowed zoom level to prevent texture issues
+    /// </summary>
+    public float MinZoomLevel { get; set; } = 0.5f;
+
+    /// <summary>
+    /// Maximum allowed zoom level to prevent texture issues
+    /// </summary>
+    public float MaxZoomLevel { get; set; } = 3.0f;
+
+    /// <summary>
+    /// Enumeration for player facing directions
+    /// </summary>
+    public enum Direction
+    {
+        Down = 0,   // Row 0 in sprite sheet (South)
+        East = 1,   // Row 1 in sprite sheet (East)
+        Up = 2,     // Row 2 in sprite sheet (North)
+        West = 3    // West uses East sprites but mirrored
+    }
+
+    /// <summary>
     /// The constructor for the Player class.
     /// </summary>
     /// <param name="startX">The starting X position of the player</param>
     /// <param name="startY">The starting Y position of the player</param>
+    /// <param name="size">The size of the player in pixels</param>
     public Player(int startX, int startY, int size)
     {
         X = startX;
@@ -75,6 +137,124 @@ public class Player
         targetY = startY;
         Size = size;
     }
+
+    /// <summary>
+    /// Sets the sprite sheet from a file path.
+    /// </summary>
+    /// <param name="spriteSheetPath">Path to the sprite sheet file</param>
+    /// <param name="spriteWidth">Width of each sprite frame</param>
+    /// <param name="spriteHeight">Height of each sprite frame</param>
+    /// <returns>True if sprite sheet was loaded successfully, false otherwise</returns>
+    public bool SetSpriteSheet(string spriteSheetPath, int spriteWidth = 32, int spriteHeight = 32)
+    {
+        try
+        {
+            if (File.Exists(spriteSheetPath))
+            {
+                SpriteSheet = Image.FromFile(spriteSheetPath);
+                SpriteWidth = spriteWidth;
+                SpriteHeight = spriteHeight;
+                return true;
+            }
+        }
+        catch (Exception)
+        {
+            // If sprite sheet loading fails, keep the existing sprite sheet (or null)
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Gets whether this player has a valid sprite sheet.
+    /// </summary>
+    public bool HasSpriteSheet => SpriteSheet != null;
+
+    /// <summary>
+    /// Updates the animation frame based on movement state.
+    /// </summary>
+    public void UpdateAnimation()
+    {
+        if (IsMoving)
+        {
+            animationCounter++;
+            if (animationCounter >= animationSpeed)
+            {
+                animationCounter = 0;
+                currentFrame = (currentFrame + 1) % 4;
+            }
+        }
+        else
+        {
+            // When not moving, stay on idle frame (frame 0)
+            currentFrame = 0;
+            animationCounter = 0;
+        }
+    }
+
+    /// <summary>
+    /// Gets the current sprite frame rectangle from the sprite sheet with zoom cropping applied.
+    /// The cropping maintains the same output size while showing a zoomed portion of the texture.
+    /// </summary>
+    /// <returns>Rectangle representing the current frame in the sprite sheet with zoom cropping</returns>
+    public Rectangle GetCurrentSpriteFrame()
+    {
+        int row = CurrentDirection == Direction.West ? (int)Direction.East : (int)CurrentDirection;
+        int frame = currentFrame;
+        
+        // Map the 4-frame walking animation (0,1,2,3) to your 3-column sprite sheet
+        // Correct mapping based on your sprite layout:
+        // - Left column (0): Idle frame
+        // - Middle column (1): First step
+        // - Right column (2): Second step
+        int spriteColumn = frame switch
+        {
+            0 => 0, // Idle pose - use left column (column 0)
+            1 => 1, // First step - use middle column (column 1)  
+            2 => 0, // Back to idle - use left column (column 0)
+            3 => 2, // Second step - use right column (column 2)
+            _ => 0  // Default to idle (left column)
+        };
+
+        // Calculate the base sprite rectangle
+        Rectangle baseSpriteRect = new Rectangle(
+            spriteColumn * (int)((double)SpriteWidth / 1.55) - 5, 
+            row * (int)((double)SpriteHeight / 1.5) - 2, 
+            SpriteWidth, 
+            SpriteHeight
+        );
+
+        // Calculate zoom cropping inline
+        float cropFactor = 1.0f / ZoomLevel;
+        
+        // Calculate new dimensions (smaller when zoomed in)
+        int croppedWidth = Math.Max((int)(baseSpriteRect.Width * cropFactor), 1);
+        int croppedHeight = Math.Max((int)(baseSpriteRect.Height * cropFactor), 1);
+        
+        // Calculate centering offsets to crop from all edges equally
+        int offsetX = (baseSpriteRect.Width - croppedWidth) / 2;
+        int offsetY = (baseSpriteRect.Height - croppedHeight) / 2;
+        
+        // Create the cropped rectangle
+        Rectangle croppedRect = new Rectangle(
+            baseSpriteRect.X + offsetX,
+            baseSpriteRect.Y + offsetY,
+            croppedWidth,
+            croppedHeight
+        );
+        
+        // Ensure the cropped rectangle stays within the original sprite bounds
+        croppedRect.X = Math.Max(croppedRect.X, baseSpriteRect.X);
+        croppedRect.Y = Math.Max(croppedRect.Y, baseSpriteRect.Y);
+        croppedRect.Width = Math.Min(croppedRect.Width, baseSpriteRect.Right - croppedRect.X);
+        croppedRect.Height = Math.Min(croppedRect.Height, baseSpriteRect.Bottom - croppedRect.Y);
+        
+        return croppedRect;
+    }
+
+    /// <summary>
+    /// Gets whether the sprite should be flipped horizontally (for West direction).
+    /// </summary>
+    public bool ShouldFlipHorizontally => CurrentDirection == Direction.West;
 
     /// <summary>
     /// Adds a key to the movement buffer
@@ -118,15 +298,19 @@ public class Player
         {
             case 'W':
                 deltaY = -1;
+                CurrentDirection = Direction.Up;
                 break;
             case 'S':
                 deltaY = 1;
+                CurrentDirection = Direction.Down;
                 break;
             case 'A':
                 deltaX = -1;
+                CurrentDirection = Direction.West;
                 break;
             case 'D':
                 deltaX = 1;
+                CurrentDirection = Direction.East;
                 break;
         }
 
@@ -172,6 +356,9 @@ public class Player
     /// <returns>True if still moving or movement was initiated, false otherwise</returns>
     public bool UpdateMovement(List<Tile> tiles)
     {
+        // Update sprite animation
+        UpdateAnimation();
+
         if (IsMoving)
         {
             float speed = MovementSpeed * currentSpeedMultiplier;
@@ -223,5 +410,14 @@ public class Player
     public string GetKeyBuffer()
     {
         return keyBuffer;
+    }
+
+    /// <summary>
+    /// Gets the current animation frame for debugging purposes
+    /// </summary>
+    /// <returns>The current frame index (0-3)</returns>
+    public int GetCurrentFrame()
+    {
+        return currentFrame;
     }
 }
