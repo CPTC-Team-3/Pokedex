@@ -44,84 +44,60 @@ public class PokedexDB
     }
 
     /// <summary>
-    /// This method will retrieve all collected pokemon for a specific user. N
-    // o two users can have the same username, so we can use that to get the user id and then get all pokemon for that user id
+    /// This method will retrieve all collected pokemon for a specific user.
+    //  No two users can have the same UserId.
     /// </summary>
-    /// <param name="username"></param>
+    /// <param name="userId"></param>
     /// <returns></returns>
-    public List<CollectedPokemon> GetAllCollectedPokemon(string username) // this will be replace with the above method
+    public List<CollectedPokemon> GetAllCollectedPokemon(int userId)
     {
         List<CollectedPokemon> collectedList = new List<CollectedPokemon>();
-        // use try/catch to handle exceptions 
+
         try
         {
             using SqlConnection connection = new SqlConnection(connectionString);
-            connection.Open(); //open the connection for the database to enter here
-            // step 1: get the user id from the username
-            string getUserId = "SELECT UserId FROM  Users WHERE Username = @Username";
-            int userId;
-            // make a SqlCommand object to execute the query
-            using (SqlCommand getUserIdCommand = new SqlCommand(getUserId, connection))
-            {
-                getUserIdCommand.Parameters.AddWithValue("@Username", username);
-                object result = getUserIdCommand.ExecuteScalar(); // ExecuteScalar will return the first column of the first row
+            connection.Open();
 
-                if (result == null)
-                {
-                    MessageBox.Show("User not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return collectedList; // return an empty list if user not found
-                }
-                userId = Convert.ToInt32(result); // convert the result to an int
-            }
-
-            // Step 2: Get all collected Pokémon for that user
-            // preivew stats or all stats for individual collected pokemon
             string query = @"
-                SELECT * FROM CollectedPokemon
-                WHERE UserId = @UserId";
+            SELECT Name, Level, HP, Defense, Attack, SpecialAttack, SpecialDefense, Speed, PokemonType1, PokemonType2
+            FROM CollectedPokemon
+            WHERE UserId = @UserId";
 
             using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@UserId", userId);
 
             using SqlDataReader reader = command.ExecuteReader();
-
-
-            while (reader.Read())
             {
-                collectedList.Add(new CollectedPokemon
+                while (reader.Read())
                 {
-                    Name = reader["Name"].ToString(),
-                    Level = Convert.ToInt32(reader["Level"]),
-                    HP = Convert.ToInt32(reader["HP"]),
-                    Defense = Convert.ToInt32(reader["Defense"]),
-                    Attack = Convert.ToInt32(reader["Attack"]),
-                    SpAttack = Convert.ToInt32(reader["SpecialAttack"]),
-                    SpDefense = Convert.ToInt32(reader["SpecialDefense"]),
-                    Speed = Convert.ToInt32(reader["Speed"]),
-                    PokemonType1 = reader["PokemonType1"].ToString(),
-                    PokemonType2 = reader["PokemonType2"] == DBNull.Value ? null : reader["PokemonType2"].ToString()
-                });
+                    collectedList.Add(new CollectedPokemon
+                    {
+                        Name = reader["Name"].ToString(),
+                        Level = reader["Level"] != DBNull.Value ? Convert.ToInt32(reader["Level"]) : 0,
+                        HP = reader["HP"] != DBNull.Value ? Convert.ToInt32(reader["HP"]) : 0,
+                        Defense = reader["Defense"] != DBNull.Value ? Convert.ToInt32(reader["Defense"]) : 0,
+                        Attack = reader["Attack"] != DBNull.Value ? Convert.ToInt32(reader["Attack"]) : 0,
+                        SpAttack = reader["SpecialAttack"] != DBNull.Value ? Convert.ToInt32(reader["SpecialAttack"]) : 0,
+                        SpDefense = reader["SpecialDefense"] != DBNull.Value ? Convert.ToInt32(reader["SpecialDefense"]) : 0,
+                        Speed = reader["Speed"] != DBNull.Value ? Convert.ToInt32(reader["Speed"]) : 0,
+                        PokemonType1 = reader["PokemonType1"].ToString(),
+                        PokemonType2 = reader["PokemonType2"] == DBNull.Value ? null : reader["PokemonType2"].ToString()
+                    });
+                    // used DBNull.Value to check for null values in the database and assign default values if necessary
+                }
             }
         }
         catch (Exception ex)
         {
+            // formatted error message for better readability
             MessageBox.Show($"Error retrieving collected Pokémon:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+
         return collectedList;
     }
 
-    /// <summary>
-    /// Gets or sets the collection of Pokémon that have been collected.
-    /// </summary>
-    public List<CollectedPokemon> MyCollection { get; set; }
+    // insert query needed so that the user can insert collected pokemon into their collected?
 
-    public void RetrieveUserCollection()
-    {
-    // current placeholder username,
-    // nothing actually functions in this method right now
-
-
-    }
 }
 #region Additional Information/Dev Notes
 /*
