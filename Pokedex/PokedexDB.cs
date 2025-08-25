@@ -12,6 +12,7 @@ public class PokedexDB
     // connection string
     string connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=PokedexDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PokedexDB"/> class and attempts to establish a connection to the
     /// database.
@@ -23,11 +24,12 @@ public class PokedexDB
     public PokedexDB()
     { // this just makes sure that the database is connected the real work is below this 
         try
+
         {
             using SqlConnection connection = new SqlConnection(connectionString);
             connection.Open();
             // If connection opens successfully, show success message
-                                        // Showed Message, MessageBox Title, MessageBox Buttons, and MessageBox Icon
+            // Showed Message, MessageBox Title, MessageBox Buttons, and MessageBox Icon
             MessageBox.Show("Database connection, complete!", "Connection Sucessful", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             // execute a test query
@@ -141,7 +143,6 @@ public class PokedexDB
             MessageBox.Show($"Error creating user:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         return null; // Return null if user creation fails
-
     }
 
     /// <summary>
@@ -187,7 +188,6 @@ public class PokedexDB
             MessageBox.Show($"Error retrieving user:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         return existingUser;
-
     }
 
 /// <summary>
@@ -230,7 +230,6 @@ public class PokedexDB
                 };
             }
         }
-
         catch (Exception ex)
         {
             MessageBox.Show($"Error creating save file:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -285,9 +284,63 @@ public class PokedexDB
 
         return existingSave;
     }
+        /// <summary>
+        /// Looks up a Pokemon by its name in the database and returns the Pokemon's details.
+        /// </summary>
+        public Pokemon? getPokemonByName(string name)
+        {
+            using SqlConnection connection = new(connectionString);
+            string query = "SELECT * FROM Pokemon WHERE Name = @Name";
+            SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Name", name);
+            connection.Open();
+            using SqlDataReader reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                return new Pokemon
+                {
+                    PokemonID = reader.GetInt32(reader.GetOrdinal("PokemonID")),
+                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                    HP = reader.GetInt32(reader.GetOrdinal("HP")),
+                    Attack = (byte)reader.GetInt32(reader.GetOrdinal("Attack")),
+                    Defense = (byte)reader.GetInt32(reader.GetOrdinal("Defense")),
+                    SpAttack = (byte)reader.GetInt32(reader.GetOrdinal("SpAttack")),
+                    SpDefense = (byte)reader.GetInt32(reader.GetOrdinal("SpDefense")),
+                    Speed = (byte)reader.GetInt32(reader.GetOrdinal("Speed")),
+                    PokemonType1 = reader.GetString(reader.GetOrdinal("PokemonType1")),
+                    PokemonType2 = reader.IsDBNull(reader.GetOrdinal("PokemonType2")) ? null : reader.GetString(reader.GetOrdinal("PokemonType2"))
+                };
+            }
+            return null;
+        }
 
-}
-#region Additional Information/Dev Notes
+        /// <summary>
+        /// Looks up a Pokemon by its ID in the database and returns the Pokemon's details.
+        /// </summary>
+        public Pokemon? getPokemonById(int id)
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            string query = "SELECT * FROM Pokemon WHERE PokemonID = @Id";
+            SqlCommand command = new(query, connection);
+            command.Parameters.AddWithValue("@Id", id);
+            connection.Open();
+            using SqlDataReader reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                return new Pokemon
+                {
+                    PokemonID = reader.GetInt32(reader.GetOrdinal("PokemonID")),
+                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                    HP = reader.GetInt32(reader.GetOrdinal("HP")),
+                    Attack = (byte)reader.GetInt32(reader.GetOrdinal("Attack")),
+                    Defense = (byte)reader.GetInt32(reader.GetOrdinal("Defense")),
+                    SpAttack = (byte)reader.GetInt32(reader.GetOrdinal("SpAttack")),
+                    SpDefense = (byte)reader.GetInt32(reader.GetOrdinal("SpDefense")),
+                    Speed = (byte)reader.GetInt32(reader.GetOrdinal("Speed")),
+                    PokemonType1 = reader.GetString(reader.GetOrdinal("PokemonType1")),
+                    PokemonType2 = reader.IsDBNull(reader.GetOrdinal("PokemonType2")) ? null : reader.GetString(reader.GetOrdinal("PokemonType2"))
+                };
+            }
+            return null;
+        }
 
-
-#endregion
