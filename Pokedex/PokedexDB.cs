@@ -21,7 +21,7 @@ public class PokedexDB
     /// connection fails, an error message is shown.</remarks>
     /// 
     public PokedexDB()
-    {
+    { // this just makes sure that the database is connected the real work is below this 
         try
         {
             using SqlConnection connection = new SqlConnection(connectionString);
@@ -96,7 +96,60 @@ public class PokedexDB
         return collectedList;
     }
 
-    // insert query needed so that the user can insert collected pokemon into their collected?
+    // insert a new user and later retrieve user data.. save data.. :) 
+
+    /// <summary>
+    /// This is to send a new user up to the database so that we can save progress like: collected pokemon,
+    /// trainer level, etc. INSERT STATEMENT should be used so that the data can be stored in the database. 
+    /// </summary>
+    /// <returns></returns>
+    public List<User> NewUser()
+    {
+        List<User> newUser = new List<User>();
+        // insert query needed so that a new user can be made. 
+
+
+        return newUser;
+    }
+
+    /// <summary>
+    /// Creates a new save file list. INSERT STATEMENT should be used so that the data can be stored in the database. 
+    /// </summary>
+    /// <returns>A new instance of a <see cref="List{T}"/> containing <see cref="SaveFile"/> objects. The list is initially
+    /// empty.</returns>
+    
+    public List<User> GetExistingUser(int UserId)
+    {
+        List<User> existingUser = new List<User>();
+        // select query needed
+
+        return existingUser;
+
+    }
+
+    /// <summary>
+    /// Allows the user to save progress and data.
+    /// </summary>
+    /// <returns>saveFile</returns>
+    public List<SaveFile> NewSave()
+    {
+        List<SaveFile> saveFile = new List<SaveFile>();
+        // insert query 
+
+        return saveFile; 
+    }
+
+    /// <summary>
+    /// Retrieve a save file from the user. 
+    /// </summary>
+    /// <param name="saveFileId"></param>
+    /// <returns>existingSave</returns>
+    public List<SaveFile> LoadSave(int saveFileId)
+    {
+        List<SaveFile> existingSave = new List<SaveFile>();
+
+        return existingSave;
+    }
 
 }
 #region Additional Information/Dev Notes
