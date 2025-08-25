@@ -279,30 +279,6 @@ public class PokedexDB
 
 }
 #region Additional Information/Dev Notes
-/*
-        Add pokemon user to the database as a sample user? 
-        Add a method to add a user to the database?
-        
-        Pre-made character that user can play as? = sample user data?
 
-        For example, "Ash Ketchum" from the Pokémon anime series:
-
-        Character Selected/Selection: Ash Ketchum  -x-
-                                         Brock 
-                                         Misty
-
-
-        username: GottaCatchEmAll!2004
-        password: pass123*
-        email: detectivepikachu@sampledex.com
-        trainer level: 5
-        UserId: 1
-
-
-        This user will have a collection of Pokémon that the player can interact with.
-        The player can view the Pokémon's stats, level them up, and evolve them.
-        The player can also catch new Pokémon and add them to their collection.
-
-*/
 
 #endregion
