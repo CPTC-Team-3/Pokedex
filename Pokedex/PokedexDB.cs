@@ -190,10 +190,17 @@ public class PokedexDB
 
     }
 
-    /// <summary>
-    /// Allows the user to save progress and data.
-    /// </summary>
-    /// <returns>saveFile</returns>
+/// <summary>
+/// Creates a new save file entry in the database for the specified user.
+/// </summary>
+/// <remarks>This method attempts to insert a new save file record into the database. If the operation fails, an
+/// error message is displayed, and the method returns <see langword="null"/>. Ensure that the database connection
+/// string is properly configured before calling this method.</remarks>
+/// <param name="userId">The unique identifier of the user associated with the save file.</param>
+/// <param name="saveDate">The date and time when the save file is created.</param>
+/// <param name="saveName">The name of the save file. This value cannot be null or empty.</param>
+/// <returns>A <see cref="SaveFile"/> object representing the newly created save file if the operation succeeds; otherwise, <see
+/// langword="null"/> if the save file creation fails.</returns>
     public SaveFile NewSave(int userId, DateTime saveDate, string saveName)
     {
         try
@@ -232,12 +239,14 @@ public class PokedexDB
         return null; // Return null if save creation fails
     }
  
-
-    /// <summary>
-    /// Retrieve a save file from the user. 
-    /// </summary>
-    /// <param name="saveFileId"></param>
-    /// <returns>existingSave</returns>
+/// <summary>
+/// Retrieves a list of save files that match the specified save file ID.
+/// </summary>
+/// <remarks>This method connects to a database to retrieve save file information based on the provided save file
+/// ID. Ensure that the database connection string is properly configured and that the database is accessible.</remarks>
+/// <param name="saveFileId">The unique identifier of the save file to retrieve. Must be a valid save file ID.</param>
+/// <returns>A list of <see cref="SaveFile"/> objects that match the specified save file ID.  The list will be empty if no
+/// matching save files are found.</returns>
     public List<SaveFile> LoadSave(int saveFileId)
     {
         List<SaveFile> existingSave = new List<SaveFile>();
