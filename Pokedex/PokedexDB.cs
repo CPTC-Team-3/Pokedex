@@ -343,4 +343,5 @@ public class PokedexDB
             }
             return null;
         }
+}
 
