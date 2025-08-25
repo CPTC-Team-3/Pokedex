@@ -96,20 +96,52 @@ public class PokedexDB
         return collectedList;
     }
 
-    // insert a new user and later retrieve user data.. save data.. :) 
-
     /// <summary>
-    /// This is to send a new user up to the database so that we can save progress like: collected pokemon,
+    /// This is to insert a new user to the database so that we can save progress like: collected pokemon,
     /// trainer level, etc. INSERT STATEMENT should be used so that the data can be stored in the database. 
     /// </summary>
     /// <returns></returns>
-    public List<User> NewUser()
+    public User? NewUser(string username, string firstname, string lastname, string password, string email)
     {
-        List<User> newUser = new List<User>();
-        // insert query needed so that a new user can be made. 
+        try
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            string query = @"INSERT INTO Users (Username, FirstName, LastName, Password, Email)
+                             VALUES (@Username, @FirstName, @LastName, @Password, @Email)";
 
+            using SqlCommand CreateUserCommand = new SqlCommand(query, connection);
+            // Add parameters for user details
+            CreateUserCommand.Parameters.AddWithValue(@"Username", username);
+            CreateUserCommand.Parameters.AddWithValue(@"FirstName", firstname);
+            CreateUserCommand.Parameters.AddWithValue(@"LastName", lastname);
+            CreateUserCommand.Parameters.AddWithValue(@"Password", password);
+            CreateUserCommand.Parameters.AddWithValue(@"Email", email);
 
-        return newUser;
+            object? result = CreateUserCommand.ExecuteScalar(); // execute scalar to get the inserted UserId
+            // just one user can be created at a time so no need for a list here, one object at a time. 
+            {
+                if (result != null && int.TryParse(result.ToString(), out int UserId))
+                {
+                    return new User
+                    {
+                        UserId = UserId,
+                        Username = username,
+                        FirstName = firstname,
+                        LastName = lastname,
+                        Password = password,
+                        Email = email,
+                    };
+                }
+            }
+        }
+
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error creating user:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        return null; // Return null if user creation fails
+
     }
 
     /// <summary>
@@ -118,11 +150,42 @@ public class PokedexDB
     /// <returns>A new instance of a <see cref="List{T}"/> containing <see cref="SaveFile"/> objects. The list is initially
     /// empty.</returns>
     
-    public List<User> GetExistingUser(int UserId)
+    public List<User> GetExistingUser(int userId)
     {
-        List<User> existingUser = new List<User>();
         // select query needed
+        List<User> existingUser = new List<User>();
+        try
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            // password is not included for security reasons
+            string query = @"SELECT UserId, Username, FirstName, Lastname, TrainerLevel
+                             FROM Users
+                             WHERE UserId = @UserId";
 
+            using SqlCommand LoadSaveCommand = new SqlCommand(query, connection);
+            LoadSaveCommand.Parameters.AddWithValue("UserId", userId);
+
+            using SqlDataReader reader = LoadSaveCommand.ExecuteReader();
+            {
+                while (reader.Read())
+                {
+                    existingUser.Add(new User
+                    {
+                        UserId = reader["UserId"] != DBNull.Value ? Convert.ToInt32(reader["UserId"]) : default(int),
+                        Username = reader["Username"].ToString(),
+                        FirstName = reader["FirstName"].ToString(),
+                        LastName = reader["LastName"].ToString(),
+                        TrainerLevel = reader["TrainerLevel"] != DBNull.Value ? Convert.ToInt32(reader["TrainerLevel"]) : default(int),
+                    });
+                }
+            }
+        }
+
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error retrieving user:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         return existingUser;
 
     }
@@ -131,13 +194,44 @@ public class PokedexDB
     /// Allows the user to save progress and data.
     /// </summary>
     /// <returns>saveFile</returns>
-    public List<SaveFile> NewSave()
+    public SaveFile NewSave(int userId, DateTime saveDate, string saveName)
     {
-        List<SaveFile> saveFile = new List<SaveFile>();
-        // insert query 
+        try
+        {
+            SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
 
-        return saveFile; 
+            // insert query here 
+            string query = @"INSERT INTO SaveFile (UserId, SaveDate, SaveName)
+                             VALUES (@UserId, @SaveDate, @SaveName)";
+
+            using SqlCommand CreateSaveCommand = new SqlCommand(query, connection);
+            CreateSaveCommand.Parameters.AddWithValue("UserId", userId); // temp userId
+            CreateSaveCommand.Parameters.AddWithValue("SaveDate", saveDate);
+            CreateSaveCommand.Parameters.AddWithValue("SaveName", saveName);
+
+
+            object? result = CreateSaveCommand.ExecuteScalar();
+            if (result != null && int.TryParse(result.ToString(), out int saveFileId))
+            {
+                SaveFile newSave = new()
+                {
+                    SaveFileId = saveFileId,
+                    UserId = userId,
+                    SaveDate = saveDate,
+                    SaveName = saveName
+                };
+            }
+        }
+
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error creating save file:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        return null; // Return null if save creation fails
     }
+ 
 
     /// <summary>
     /// Retrieve a save file from the user. 
@@ -147,6 +241,38 @@ public class PokedexDB
     public List<SaveFile> LoadSave(int saveFileId)
     {
         List<SaveFile> existingSave = new List<SaveFile>();
+        try
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open(); 
+            string query = @"SELECT SaveFileId, UserId, SaveDate, SaveName
+                             FROM SaveFile
+                             WHERE SaveFileId = @SaveFileId";
+
+            using SqlCommand LoadSaveCommand = new SqlCommand(query, connection);
+            LoadSaveCommand.Parameters.AddWithValue("SaveFileId", saveFileId);
+
+            using SqlDataReader reader = LoadSaveCommand.ExecuteReader();
+            {
+                while (reader.Read())
+                {
+                    existingSave.Add(new SaveFile
+                    {
+                        SaveName = reader["Name"].ToString(),
+                        SaveDate = reader["SaveDate"] != DBNull.Value ? 
+                                                    Convert.ToDateTime(reader["SaveDate"]) : default(DateTime),
+                        UserId = reader["UserId"] != DBNull.Value ? Convert.ToInt32(reader["UserId"]) : default(int),
+                        SaveFileId = reader["SaveFileId"] != DBNull.Value ?
+                                                            Convert.ToInt32(reader["SaveFileId"]) : default(int)
+                    }); 
+                }
+            }
+        }
+
+        catch (Exception ex)
+        {
+                      MessageBox.Show($"Error retrieving saved file:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
 
         return existingSave;
     }

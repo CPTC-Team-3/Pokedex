@@ -15,16 +15,13 @@ namespace Pokedex
     {
         public int UserId { get; set; }
         public required string Username { get; set; }
-        public required string Password { get; set; }
-        public required string Email { get; set; }
+
+        public required string FirstName { get; set; }
+
+        public required string LastName { get; set; }
+        public string ? Password { get; set; }
+        public string ? Email { get; set; }
         public int TrainerLevel { get; set; } = 1;
 
-    /* USER TABLE CONTENTS:
-    UserId INT PRIMARY KEY IDENTITY(1,1),
-	Username VARCHAR(50) NOT NULL,
-	Password VARCHAR(255) NOT NULL,
-	Email VARCHAR(100) NOT NULL,
-	TrainerLevel INT NOT NULL DEFAULT 1
-         */
     }
 }
