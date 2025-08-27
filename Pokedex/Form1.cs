@@ -9,27 +9,27 @@ public partial class Form1 : Form
     /// Size of each tile in pixels
     /// </summary>
     public int tileSize = 60;
-    
+
     /// <summary>
     /// List of all tiles in the game world
     /// </summary>
     private List<Tile> tiles;
-    
+
     /// <summary>
     /// The player instance controlled by user input
     /// </summary>
     private Player player;
-    
+
     /// <summary>
     /// Timer that controls the game loop and update frequency
     /// </summary>
     private System.Windows.Forms.Timer gameTimer;
-    
+
     /// <summary>
     /// Target frames per second for the game
     /// </summary>
     private const int TARGET_FPS = 60;
-    
+
     /// <summary>
     /// Interval between timer ticks in milliseconds (calculated from TARGET_FPS)
     /// </summary>
@@ -44,22 +44,22 @@ public partial class Form1 : Form
     /// Timestamp of the last frame for FPS calculation
     /// </summary>
     private DateTime lastFrameTime = DateTime.Now;
-    
+
     /// <summary>
     /// Counter for frames rendered in the current second
     /// </summary>
     private int frameCount = 0;
-    
+
     /// <summary>
     /// Current calculated frames per second
     /// </summary>
     private double currentFPS = 0;
-    
+
     /// <summary>
     /// Flag indicating whether the game needs to redraw the screen
     /// </summary>
     private bool needsRedraw = false;
-    
+
     /// <summary>
     /// Flag indicating whether the game has been initialized and started
     /// </summary>
@@ -69,7 +69,7 @@ public partial class Form1 : Form
     /// Camera offset in the X direction for centering the view on the player
     /// </summary>
     private float cameraOffsetX = 0;
-    
+
     /// <summary>
     /// Camera offset in the Y direction for centering the view on the player
     /// </summary>
@@ -81,7 +81,7 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
-        
+
         //// Initialize the PokedexDB class to connect to the database
         //// test if the connection is sucessful
         //try
@@ -93,15 +93,15 @@ public partial class Form1 : Form
         //    // If there is an error initializing the database connection, show an error message
         //    MessageBox.Show($"ERROR DATABASE CONNECTION ERROR OCCURRED", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         //}
-        
+
         InitializeGame();
         SetupForm();
         InitializeGameTimer();
-        
+
         // Try to load textures from the textures folder in the application lib folder.
-        string texturesPath = Path.Combine(Application.StartupPath, "lib/textures");
+        string texturesPath = Path.Combine(Application.StartupPath, "../../../lib/textures");
         LoadTextures(texturesPath);
-        
+
         gameStarted = true;
     }
 
@@ -125,7 +125,7 @@ public partial class Form1 : Form
     {
         // Calculate FPS for monitoring
         CalculateFPS();
-        
+
         // Update player movement
         if (player.UpdateMovement(tiles))
         {
@@ -134,7 +134,7 @@ public partial class Form1 : Form
 
         // Update camera position
         UpdateCamera();
-        
+
         // Only redraw if something has changed
         if (needsRedraw)
         {
@@ -145,8 +145,8 @@ public partial class Form1 : Form
         // Update debug info if needed
         if (DEBUG_MODE)
         {
-            string spriteInfo = player.HasSpriteSheet ? 
-                $" - Dir: {player.CurrentDirection} - Frame: {player.GetCurrentFrame()}" : 
+            string spriteInfo = player.HasSpriteSheet ?
+                $" - Dir: {player.CurrentDirection} - Frame: {player.GetCurrentFrame()}" :
                 " - No Sprite";
             this.Text = $"Pokedex Game - FPS: {currentFPS:F1} - Keys: {player.GetKeyBuffer()}{spriteInfo}";
         }
@@ -164,10 +164,10 @@ public partial class Form1 : Form
         // Calculate where the camera should be to center on the player
         cameraOffsetX = screenCenterX - player.GetVisualX() - (tileSize / 2f);
         cameraOffsetY = screenCenterY - player.GetVisualY() - (tileSize / 2f);
-        
+
         needsRedraw = true;
     }
-    
+
     /// <summary>
     /// Calculates and updates the current FPS value
     /// </summary>
@@ -176,7 +176,7 @@ public partial class Form1 : Form
         frameCount++;
         var now = DateTime.Now;
         var elapsed = (now - lastFrameTime).TotalSeconds;
-        
+
         if (elapsed >= 1.0) // Update FPS display every second
         {
             currentFPS = frameCount / elapsed;
@@ -198,11 +198,11 @@ public partial class Form1 : Form
         this.Text = "Pokedex Game";
         this.WindowState = FormWindowState.Maximized;
         this.StartPosition = FormStartPosition.CenterScreen;
-        
+
         // Enable double buffering to reduce flicker
-        this.SetStyle(ControlStyles.AllPaintingInWmPaint | 
-                     ControlStyles.UserPaint | 
-                     ControlStyles.DoubleBuffer | 
+        this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.UserPaint |
+                     ControlStyles.DoubleBuffer |
                      ControlStyles.ResizeRedraw, true);
     }
 
@@ -224,25 +224,25 @@ public partial class Form1 : Form
                 float speed = isSand ? 0.5f : 1.0f; // Sand tiles are slower
 
                 bool isWalkable = (x + y) % 15 != 0 || (x + y) % 5 <= 1; // Example logic for walkable tiles
-                if(!isWalkable)
+                if (!isWalkable)
                 {
                     color = Color.Gray; // Non-walkable tiles are gray
                 }
 
                 Tile tile = new Tile(x * tileSize, y * tileSize, color, isWalkable, speed);
-                
+
                 // Try to load tile textures (you can add your texture files here)
                 // Example: tile.SetTexture($"Textures/Tiles/{(isSand ? "sand" : "grass")}.png");
-                
+
                 tiles.Add(tile);
             }
         }
 
         player = new Player(0, 0, tileSize); // Start player at the top-left corner
-        
+
         // Try to load player sprite sheet (you can add your sprite sheet file here)
         // Example: player.SetSpriteSheet("Textures/Player/player_spritesheet.png", 32, 32);
-        
+
         needsRedraw = true; // Initial draw needed
     }
 
@@ -286,7 +286,7 @@ public partial class Form1 : Form
                 tile.SetTexture(rockTexturePath);
             }
         }
-        
+
 
         needsRedraw = true;
     }
@@ -300,7 +300,7 @@ public partial class Form1 : Form
         base.OnPaint(e);
 
         Graphics g = e.Graphics;
-        
+
         // Optimize graphics rendering
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
         g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
@@ -338,15 +338,15 @@ public partial class Form1 : Form
             {
                 // Save the current graphics state
                 var state = g.Save();
-                
+
                 // Translate to the center of the sprite, flip horizontally, then translate back
                 g.TranslateTransform(destRect.X + destRect.Width / 2, destRect.Y + destRect.Height / 2);
                 g.ScaleTransform(-1, 1);
                 g.TranslateTransform(-destRect.Width / 2, -destRect.Height / 2);
-                
+
                 // Draw the sprite
                 g.DrawImage(player.SpriteSheet!, new RectangleF(0, 0, destRect.Width, destRect.Height), sourceRect, GraphicsUnit.Pixel);
-                
+
                 // Restore the graphics state
                 g.Restore(state);
             }
@@ -419,7 +419,7 @@ public partial class Form1 : Form
             player.RemoveKeyFromBuffer(keyChar.Value);
         }
     }
-    
+
     /// <summary>
     /// Gets the current frame rate of the game
     /// </summary>
@@ -427,7 +427,7 @@ public partial class Form1 : Form
     {
         return currentFPS;
     }
-    
+
     /// <summary>
     /// Allows changing the target frame rate at runtime
     /// </summary>
@@ -436,7 +436,7 @@ public partial class Form1 : Form
     {
         if (newFPS < 1 || newFPS > 120)
             return;
-            
+
         gameTimer.Stop();
         gameTimer.Interval = 1000 / newFPS;
         gameTimer.Start();
