@@ -1,0 +1,27 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Pokedex
+{
+    /// <summary>
+    /// This class represents a user in the Pokedex application. It keeps track of user information such as username, 
+    /// password, email, and trainer level. So that we can specify each user and which pokemon they have collected.
+    /// </summary>
+    
+    public class User
+    {
+        public int UserId { get; set; }
+        public required string Username { get; set; }
+
+        public required string FirstName { get; set; }
+
+        public required string LastName { get; set; }
+        public string ? Password { get; set; }
+        public string ? Email { get; set; }
+        public int TrainerLevel { get; set; } = 1;
+
+    }
+}
