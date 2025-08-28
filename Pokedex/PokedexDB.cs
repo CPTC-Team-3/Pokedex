@@ -18,29 +18,27 @@ public class PokedexDB
     /// database.
     /// </summary>
     /// <remarks>This constructor tests the database connection by opening a connection to the database and
-    /// executing a simple query. If the connection is successful, a confirmation message is displayed. If the
-    /// connection fails, an error message is shown.</remarks>
+    /// executing a simple query. If the connection is successful, the connection is established. If the
+    /// connection fails, an exception is thrown.</remarks>
     /// 
     public PokedexDB()
     { // this just makes sure that the database is connected the real work is below this 
         try
-
         {
             using SqlConnection connection = new SqlConnection(connectionString);
             connection.Open();
-            // If connection opens successfully, show success message
-            // Showed Message, MessageBox Title, MessageBox Buttons, and MessageBox Icon
-            MessageBox.Show("Database connection, complete!", "Connection Sucessful", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
+            
             // execute a test query
             string query = "SELECT * FROM Pokemon";
             SqlCommand command = new SqlCommand(query, connection);
             command.ExecuteNonQuery();
+            
+            // Connection successful - no message box needed as MainMenu will handle UI
         }
         catch (Exception ex)
         {
-            // If connection fails, show error message
-            MessageBox.Show($"Failed to connect to database:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            // If connection fails, rethrow exception to be handled by caller
+            throw new Exception($"Failed to connect to database: {ex.Message}", ex);
         }
 
     }
