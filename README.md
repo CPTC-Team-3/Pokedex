@@ -36,12 +36,12 @@ Example of the database schema and values used in the project:
       - Open SQL Server Object Explorer in Visual Studio (View → SQL Server Object Explorer)
       - Expand "(localdb)\MSSQLLocalDB"
       - Right-click on "(localdb)\MSSQLLocalDB" → New Query
-      - Copy and paste the **entire contents** of `team-docs/PokedexDatabase.sql` into the query window
+      - Copy and paste the **entire contents** of `team-docs/PokedexDatabase.sql` into the query window (This ensures that the code will run in this database)
       - **Execute the script** (Ctrl+Shift+E or click Execute button)
       - This will create the PokedexDB database, all tables, and populate with 15 Pokemon
       
       ### Method 2: Using SQL Server Management Studio (SSMS)
-      - Download and install SSMS if not already installed
+      - Download and install SSMS (SQL Server Management Studio) if not already installed
       - Connect to server: `(localdb)\MSSQLLocalDB`
       - Open the `team-docs/PokedexDatabase.sql` file in SSMS
       - **Execute the script** (F5 or click Execute button)
