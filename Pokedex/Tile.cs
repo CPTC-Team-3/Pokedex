@@ -33,6 +33,11 @@ public class Tile
     public float Speed { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this tile is a wild zone where Pokemon encounters can occur.
+    /// </summary>
+    public bool WildZone { get; set; }
+
+    /// <summary>
     /// The constructor for the Tile class.
     /// </summary>
     /// <param name="x">The X position of this tile</param>
@@ -40,7 +45,8 @@ public class Tile
     /// <param name="color">The rendering color of this tile</param>
     /// <param name="isWalkable">A value indicating whether this tile can be used for walking</param>
     /// <param name="speed">The transition speed multiplier for players moving from this tile (default is 1.0)</param>
-    public Tile(int x, int y, Color color, bool isWalkable, float speed = 1.0f)
+    /// <param name="wildZone">A value indicating whether this tile is a wild zone for Pokemon encounters (default is false)</param>
+    public Tile(int x, int y, Color color, bool isWalkable, float speed = 1.0f, bool wildZone = false)
     {
         X = x;
         Y = y;
@@ -48,6 +54,7 @@ public class Tile
         Texture = null;
         IsWalkable = isWalkable;
         Speed = speed;
+        WildZone = wildZone;
     }
 
     /// <summary>
@@ -58,7 +65,8 @@ public class Tile
     /// <param name="texture">The texture image for this tile</param>
     /// <param name="isWalkable">A value indicating whether this tile can be used for walking</param>
     /// <param name="speed">The transition speed multiplier for players moving from this tile (default is 1.0)</param>
-    public Tile(int x, int y, Image texture, bool isWalkable, float speed = 1.0f)
+    /// <param name="wildZone">A value indicating whether this tile is a wild zone for Pokemon encounters (default is false)</param>
+    public Tile(int x, int y, Image texture, bool isWalkable, float speed = 1.0f, bool wildZone = false)
     {
         X = x;
         Y = y;
@@ -66,6 +74,7 @@ public class Tile
         Texture = texture;
         IsWalkable = isWalkable;
         Speed = speed;
+        WildZone = wildZone;
     }
 
     /// <summary>
@@ -77,7 +86,8 @@ public class Tile
     /// <param name="fallbackColor">The fallback color if texture fails to load</param>
     /// <param name="isWalkable">A value indicating whether this tile can be used for walking</param>
     /// <param name="speed">The transition speed multiplier for players moving from this tile (default is 1.0)</param>
-    public Tile(int x, int y, Image texture, Color fallbackColor, bool isWalkable, float speed = 1.0f)
+    /// <param name="wildZone">A value indicating whether this tile is a wild zone for Pokemon encounters (default is false)</param>
+    public Tile(int x, int y, Image texture, Color fallbackColor, bool isWalkable, float speed = 1.0f, bool wildZone = false)
     {
         X = x;
         Y = y;
@@ -85,6 +95,7 @@ public class Tile
         Texture = texture;
         IsWalkable = isWalkable;
         Speed = speed;
+        WildZone = wildZone;
     }
 
     /// <summary>
