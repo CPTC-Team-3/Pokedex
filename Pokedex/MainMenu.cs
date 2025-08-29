@@ -442,9 +442,8 @@ namespace Pokedex
 
                 if (selectedUser != null)
                 {
-                    // TODO: Pass selectedUser to Form1 when we implement user-specific gameplay
-                    // For now, just start the game
-                    Form1 gameForm = new Form1();
+                    // Pass selectedUser to Form1 for user-specific gameplay
+                    Form1 gameForm = new Form1(selectedUser);
                     gameForm.Show();
 
                     // Hide the Main Menu
