@@ -85,11 +85,33 @@ public partial class Form1 : Form
         SetupForm();
         InitializeGameTimer();
 
+        this.MaximizeBox = false;
+        this.FormBorderStyle = FormBorderStyle.FixedDialog;
+
         // Try to load textures from the textures folder in the application lib folder.
         string texturesPath = Path.Combine(Application.StartupPath, "../../../lib/textures");
         LoadTextures(texturesPath);
 
         gameStarted = true;
+        
+        // Handle form closing to properly clean up resources and exit application
+        this.FormClosing += Form1_FormClosing;
+    }
+
+    /// <summary>
+    /// Handles the form closing event to properly clean up resources and exit the application
+    /// </summary>
+    private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+    {
+        // Stop the game timer to prevent it from continuing after form closes
+        if (gameTimer != null)
+        {
+            gameTimer.Stop();
+            gameTimer.Dispose();
+        }
+
+        // Exit the entire application when the game form closes
+        Application.Exit();
     }
 
     /// <summary>
