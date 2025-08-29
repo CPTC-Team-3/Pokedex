@@ -58,10 +58,12 @@ public class PokedexDB
             using SqlConnection connection = new SqlConnection(connectionString);
             connection.Open();
 
+            // Join CollectedPokemon with Pokemon table to get all Pokemon details
             string query = @"
-            SELECT Name, Level, HP, Defense, Attack, SpecialAttack, SpecialDefense, Speed, PokemonType1, PokemonType2
-            FROM CollectedPokemon
-            WHERE UserId = @UserId";
+            SELECT p.Name, cp.Level, cp.HP, p.Defense, p.Attack, p.SpecialAttack, p.SpecialDefense, p.Speed, p.PokemonType1, p.PokemonType2
+            FROM CollectedPokemon cp
+            INNER JOIN Pokemon p ON cp.PokemonId = p.PokemonId
+            WHERE cp.UserId = @UserId";
 
             using SqlCommand command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@UserId", userId);
@@ -299,14 +301,14 @@ public class PokedexDB
         {
             return new Pokemon
             {
-                PokemonID = reader.GetInt32(reader.GetOrdinal("PokemonID")),
+                PokemonID = reader.GetInt32(reader.GetOrdinal("PokemonId")),
                 Name = reader.GetString(reader.GetOrdinal("Name")),
                 HP = reader.GetInt32(reader.GetOrdinal("HP")),
-                Attack = (byte)reader.GetInt32(reader.GetOrdinal("Attack")),
-                Defense = (byte)reader.GetInt32(reader.GetOrdinal("Defense")),
-                SpAttack = (byte)reader.GetInt32(reader.GetOrdinal("SpAttack")),
-                SpDefense = (byte)reader.GetInt32(reader.GetOrdinal("SpDefense")),
-                Speed = (byte)reader.GetInt32(reader.GetOrdinal("Speed")),
+                Attack = reader.GetInt32(reader.GetOrdinal("Attack")),
+                Defense = reader.GetInt32(reader.GetOrdinal("Defense")),
+                SpAttack = reader.GetInt32(reader.GetOrdinal("SpecialAttack")),
+                SpDefense = reader.GetInt32(reader.GetOrdinal("SpecialDefense")),
+                Speed = reader.GetInt32(reader.GetOrdinal("Speed")),
                 PokemonType1 = reader.GetString(reader.GetOrdinal("PokemonType1")),
                 PokemonType2 = reader.IsDBNull(reader.GetOrdinal("PokemonType2")) ? null : reader.GetString(reader.GetOrdinal("PokemonType2"))
             };
@@ -320,7 +322,7 @@ public class PokedexDB
     public Pokemon? getPokemonById(int id)
     {
         using SqlConnection connection = new SqlConnection(connectionString);
-        string query = "SELECT * FROM Pokemon WHERE PokemonID = @Id";
+        string query = "SELECT * FROM Pokemon WHERE PokemonId = @Id";
         SqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@Id", id);
         connection.Open();
@@ -329,14 +331,14 @@ public class PokedexDB
         {
             return new Pokemon
             {
-                PokemonID = reader.GetInt32(reader.GetOrdinal("PokemonID")),
+                PokemonID = reader.GetInt32(reader.GetOrdinal("PokemonId")),
                 Name = reader.GetString(reader.GetOrdinal("Name")),
                 HP = reader.GetInt32(reader.GetOrdinal("HP")),
-                Attack = (byte)reader.GetInt32(reader.GetOrdinal("Attack")),
-                Defense = (byte)reader.GetInt32(reader.GetOrdinal("Defense")),
-                SpAttack = (byte)reader.GetInt32(reader.GetOrdinal("SpAttack")),
-                SpDefense = (byte)reader.GetInt32(reader.GetOrdinal("SpDefense")),
-                Speed = (byte)reader.GetInt32(reader.GetOrdinal("Speed")),
+                Attack = reader.GetInt32(reader.GetOrdinal("Attack")),
+                Defense = reader.GetInt32(reader.GetOrdinal("Defense")),
+                SpAttack = reader.GetInt32(reader.GetOrdinal("SpecialAttack")),
+                SpDefense = reader.GetInt32(reader.GetOrdinal("SpecialDefense")),
+                Speed = reader.GetInt32(reader.GetOrdinal("Speed")),
                 PokemonType1 = reader.GetString(reader.GetOrdinal("PokemonType1")),
                 PokemonType2 = reader.IsDBNull(reader.GetOrdinal("PokemonType2")) ? null : reader.GetString(reader.GetOrdinal("PokemonType2"))
             };
@@ -419,6 +421,46 @@ public class PokedexDB
         catch (Exception ex)
         {
             MessageBox.Show($"Error deleting user:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Adds a Pokemon to a user's collected Pokemon list
+    /// </summary>
+    /// <param name="userId">The ID of the user</param>
+    /// <param name="pokemonName">The name of the Pokemon to add</param>
+    /// <returns>True if the Pokemon was successfully added, false otherwise</returns>
+    public bool AddPokemonToUser(int userId, string pokemonName)
+    {
+        try
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+
+            // First, get the Pokemon details from the Pokemon table
+            Pokemon? pokemon = getPokemonByName(pokemonName);
+            if (pokemon == null)
+            {
+                return false;
+            }
+
+            // Insert the Pokemon into the CollectedPokemon table using the new structure
+            string query = @"INSERT INTO CollectedPokemon (UserId, PokemonId, Level, HP)
+                             VALUES (@UserId, @PokemonId, @Level, @HP)";
+
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@PokemonId", pokemon.PokemonID);
+            command.Parameters.AddWithValue("@Level", 5); // Starting level for first Pokemon
+            command.Parameters.AddWithValue("@HP", pokemon.HP);
+
+            int rowsAffected = command.ExecuteNonQuery();
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error adding Pokemon to user:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return false;
         }
     }

@@ -1,6 +1,8 @@
 USE master;
 GO
 
+-- Be sure to connect to this DB: (localdb)\MSSQLLocalDB
+
 DROP DATABASE IF EXISTS PokedexDB;
 GO
 
@@ -47,16 +49,8 @@ CREATE TABLE SaveFile (
 CREATE TABLE CollectedPokemon (
 	UserId INT,
 	PokemonId INT,
-	Name VARCHAR(35) NOT NULL,
 	Level INT NOT NULL DEFAULT 1,
-	HP INT NOT NULL,
-	Defense INT NOT NULL,
-	Attack INT NOT NULL,
-	SpecialAttack INT NOT NULL,
-	SpecialDefense INT NOT NULL,
-	Speed INT NOT NULL,
-	PokemonType1 VARCHAR(35) NOT NULL,
-	PokemonType2 VARCHAR(35),
+	HP INT NOT NULL
 
 	-- Primary key to ensure each user can only have one entry per Pokémon
 	PRIMARY KEY (UserId, PokemonId),
