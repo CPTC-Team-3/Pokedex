@@ -81,28 +81,37 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
-
-        //// Initialize the PokedexDB class to connect to the database
-        //// test if the connection is sucessful
-        //try
-        //{
-        //    PokedexDB pokedexDB = new PokedexDB();
-        //}
-        //catch (Exception ex)
-        //{
-        //    // If there is an error initializing the database connection, show an error message
-        //    MessageBox.Show($"ERROR DATABASE CONNECTION ERROR OCCURRED", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //}
-
         InitializeGame();
         SetupForm();
         InitializeGameTimer();
+
+        this.MaximizeBox = false;
+        this.FormBorderStyle = FormBorderStyle.FixedDialog;
 
         // Try to load textures from the textures folder in the application lib folder.
         string texturesPath = Path.Combine(Application.StartupPath, "../../../lib/textures");
         LoadTextures(texturesPath);
 
         gameStarted = true;
+        
+        // Handle form closing to properly clean up resources and exit application
+        this.FormClosing += Form1_FormClosing;
+    }
+
+    /// <summary>
+    /// Handles the form closing event to properly clean up resources and exit the application
+    /// </summary>
+    private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+    {
+        // Stop the game timer to prevent it from continuing after form closes
+        if (gameTimer != null)
+        {
+            gameTimer.Stop();
+            gameTimer.Dispose();
+        }
+
+        // Exit the entire application when the game form closes
+        Application.Exit();
     }
 
     /// <summary>
@@ -211,32 +220,10 @@ public partial class Form1 : Form
     /// </summary>
     private void InitializeGame()
     {
-        tiles = new List<Tile>();
-        int mapX = 20, mapY = 20;
-
-        // Create a x by y grid of tiles - alternating walkable tiles
-        for (int x = 0; x < mapX; x++)
-        {
-            for (int y = 0; y < mapY; y++)
-            {
-                bool isSand = (x + y) % 10 >= 3; // Example logic for sand tiles
-                Color color = isSand ? Color.SandyBrown : Color.Green;
-                float speed = isSand ? 0.5f : 1.0f; // Sand tiles are slower
-
-                bool isWalkable = (x + y) % 15 != 0 || (x + y) % 5 <= 1; // Example logic for walkable tiles
-                if (!isWalkable)
-                {
-                    color = Color.Gray; // Non-walkable tiles are gray
-                }
-
-                Tile tile = new Tile(x * tileSize, y * tileSize, color, isWalkable, speed);
-
-                // Try to load tile textures (you can add your texture files here)
-                // Example: tile.SetTexture($"Textures/Tiles/{(isSand ? "sand" : "grass")}.png");
-
-                tiles.Add(tile);
-            }
-        }
+        // Generate map using the Map class
+        int mapWidth = 40; // Larger map for more exploration
+        int mapHeight = 30;
+        tiles = Map.GenerateMap(mapWidth, mapHeight, tileSize);
 
         player = new Player(0, 0, tileSize); // Start player at the top-left corner
 
@@ -265,28 +252,37 @@ public partial class Form1 : Form
             player.SetSpriteSheet(playerSpritePath, 32, 32);
         }
 
-
-        // Example: Load different textures for different tile types
+        // Load textures for different tile types
         string grassTexturePath = Path.Combine(texturesDirectory, "Grass.png");
+        string dirtTexturePath = Path.Combine(texturesDirectory, "Dirt.png");
         string sandTexturePath = Path.Combine(texturesDirectory, "Sand.png");
-        string rockTexturePath = Path.Combine(texturesDirectory, "Rock.png");
+        string stoneTexturePath = Path.Combine(texturesDirectory, "Stone.png");
+        string waterTexturePath = Path.Combine(texturesDirectory, "Water.png");
 
         foreach (var tile in tiles)
         {
+            // Match tiles by color to their corresponding textures
             if (tile.TileColor == Color.Green && File.Exists(grassTexturePath))
             {
                 tile.SetTexture(grassTexturePath);
+            }
+            else if (tile.TileColor == Color.SaddleBrown && File.Exists(dirtTexturePath))
+            {
+                tile.SetTexture(dirtTexturePath);
             }
             else if (tile.TileColor == Color.SandyBrown && File.Exists(sandTexturePath))
             {
                 tile.SetTexture(sandTexturePath);
             }
-            else if (tile.TileColor == Color.Gray && File.Exists(rockTexturePath))
+            else if (tile.TileColor == Color.Gray && File.Exists(stoneTexturePath))
             {
-                tile.SetTexture(rockTexturePath);
+                tile.SetTexture(stoneTexturePath);
+            }
+            else if (tile.TileColor == Color.Blue && File.Exists(waterTexturePath))
+            {
+                tile.SetTexture(waterTexturePath);
             }
         }
-
 
         needsRedraw = true;
     }

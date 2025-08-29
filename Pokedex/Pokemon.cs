@@ -42,6 +42,12 @@ public class Pokemon
     public int Speed { get; set; }
 
     /// <summary>
+    /// The level of the Pokemon, which can affect its stats and abilities.
+    /// To evolve a basic Pokemon, you must reach level 16. To evolve a stage 1 Pokemon, you must reach level 36.
+    /// </summary>
+    public int Level { get; set; } = 1;
+
+    /// <summary>
     /// The Pokmon's primary type.
     /// </summary>
     public required string PokemonType1 { get; set; }
