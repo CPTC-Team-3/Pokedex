@@ -1,6 +1,6 @@
 using Microsoft.Data.SqlClient;
 using System.Drawing.Imaging;
-
+//
 namespace Pokedex;
 
 /// <summary>
@@ -16,17 +16,17 @@ public partial class Form1 : Form
     /// <summary>
     /// List of all tiles in the game world
     /// </summary>
-    private List<Tile> tiles;
+    private List<Tile> tiles = null!;
 
     /// <summary>
     /// The player instance controlled by user input
     /// </summary>
-    private Player player;
+    private Player player = null!;
 
     /// <summary>
     /// Timer that controls the game loop and update frequency
     /// </summary>
-    private System.Windows.Forms.Timer gameTimer;
+    private System.Windows.Forms.Timer gameTimer = null!;
 
     /// <summary>
     /// The currently selected user playing the game
@@ -68,10 +68,7 @@ public partial class Form1 : Form
     /// </summary>
     private bool needsRedraw = false;
 
-    /// <summary>
-    /// Flag indicating whether the game has been initialized and started
-    /// /// </summary>
-    private bool gameStarted = false;
+    //
 
     /// <summary>
     /// Camera offset in the X direction for centering the view on the player
@@ -155,6 +152,11 @@ public partial class Form1 : Form
     private Image? pokeballImage = null;
 
     /// <summary>
+    /// Original size of the Pokeball image
+    /// </summary>
+    private Image? smallPokeballImage = null;
+
+    /// <summary>
     /// Flag to track if Pokeball animation has started
     /// </summary>
     private bool pokeballAnimationStarted = false;
@@ -169,6 +171,8 @@ public partial class Form1 : Form
     /// Image of the wild Pokemon
     /// </summary>
     private Image? wildPokemonImage = null;
+    // Track original wild image when swapping to Pokeball
+    private Image? wildPokemonImageOriginal = null;
 
     /// <summary>
     /// List of Pokemon the current user owns
@@ -227,6 +231,10 @@ public partial class Form1 : Form
     private readonly List<string> turnAnnouncements = new();
     private bool playerProtectedThisTurn = false;
     private bool wildProtectedThisTurn = false;
+    // Catch flow state
+    private bool catchPendingResolution = false;
+    private bool wildTextureIsPokeball = false;
+    private RectangleF catchButtonRect = RectangleF.Empty;
 
     // --- HP, KO and fade state ---
     private int playerMaxHP = 0, playerCurrentHP = 0;
@@ -276,7 +284,7 @@ public partial class Form1 : Form
         // Try to load Pokeball image for encounters
         LoadPokeballImage(texturesPath);
 
-        gameStarted = true;
+    // game started
         
         // Handle form closing to properly clean up resources and exit application
         this.FormClosing += Form1_FormClosing;
@@ -285,7 +293,7 @@ public partial class Form1 : Form
     /// <summary>
     /// Handles the form closing event to properly clean up resources and exit the application
     /// </summary>
-    private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+    private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
     {
         // Stop the game timer to prevent it from continuing after form closes
         if (gameTimer != null)
@@ -314,7 +322,7 @@ public partial class Form1 : Form
     /// </summary>
     /// <param name="sender">The source of the event</param>
     /// <param name="e">Event arguments</param>
-    private void GameTimer_Tick(object sender, EventArgs e)
+    private void GameTimer_Tick(object? sender, EventArgs e)
     {
         // Calculate FPS for monitoring
         CalculateFPS();
@@ -728,6 +736,26 @@ public partial class Form1 : Form
             // Create a simple placeholder Pokeball if the image doesn't exist
             CreatePokeballPlaceholder();
         }
+
+        // Create a smaller version of the Pokeball for use in the battle interface
+        string smallPokeballPath = Path.Combine(texturesDirectory, "Pokemon/Pokeball.png");
+        if (File.Exists(pokeballPath))
+        {
+            try
+            {
+                smallPokeballImage = Image.FromFile(smallPokeballPath);
+            }
+            catch
+            {
+                // If we can't load the image, create a simple placeholder
+                CreatePokeballPlaceholder();
+            }
+        }
+        else
+        {
+            // Create a simple placeholder Pokeball if the image doesn't exist
+            CreatePokeballPlaceholder();
+        }
     }
 
     /// <summary>
@@ -933,8 +961,7 @@ public partial class Form1 : Form
     /// <param name="g">Graphics context for drawing</param>
     private void DrawBattleElements(Graphics g)
     {
-        // Draw Pokeball indicator in top left corner
-        DrawPokeballIndicator(g);
+    // (Moved Pokeball indicator into the moves box as a Catch button)
 
         // Draw wild Pokemon on the right side of screen
         if (wildPokemon != null && wildPokemonImage != null)
@@ -1109,6 +1136,32 @@ public partial class Form1 : Form
         using (Pen borderPen = new Pen(Color.DarkGray, 3))
         {
             g.DrawRectangle(borderPen, boxX, boxY, boxWidth, boxHeight);
+        }
+
+        // Draw Pokeball catch button in the top-right of the moves box
+        float indicatorSize = 50f;
+        float circleX = boxX + boxWidth - indicatorSize - 15f;
+        float circleY = boxY + 10f;
+        catchButtonRect = new RectangleF(circleX, circleY, indicatorSize, indicatorSize);
+        using (Brush circleBrush = new SolidBrush(Color.White)) g.FillEllipse(circleBrush, catchButtonRect);
+        using (Pen circlePen = new Pen(Color.Black, 2)) g.DrawEllipse(circlePen, catchButtonRect);
+        if (pokeballImage != null)
+        {
+            float pbSize = indicatorSize * 0.7f;
+            float pbX = circleX + (indicatorSize - pbSize) / 2f;
+            float pbY = circleY + (indicatorSize - pbSize) / 2f;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+            g.DrawImage(pokeballImage, pbX, pbY, pbSize, pbSize);
+        }
+        // Optional small label
+        using (Font catchFont = new Font("Arial", 9, FontStyle.Bold))
+        using (Brush catchBrush = new SolidBrush(Color.Black))
+        {
+            var txt = "Catch";
+            var size = g.MeasureString(txt, catchFont);
+            g.DrawString(txt, catchFont, catchBrush, circleX + (indicatorSize - size.Width) / 2f, circleY + indicatorSize + 2f);
         }
 
         // If currently announcing the turn, draw announcement text instead of options
@@ -1786,16 +1839,55 @@ public partial class Form1 : Form
             return;
         }
 
-        // If announcing, any click continues to next turn (restore move options)
+        // If announcing, handle special catch resolution first; otherwise restore move options
         if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && isAnnouncingTurn)
         {
-            isAnnouncingTurn = false;
-            playerProtectedThisTurn = false;
-            wildProtectedThisTurn = false;
-            selectedMoveIndex = -1;
-            hoveredMoveIndex = -1;
-            needsRedraw = true;
-            return;
+            if (catchPendingResolution)
+            {
+                // Resolve catch based on wild HP
+                bool caught = (wildPokemon != null && wildMaxHP > 0 && wildCurrentHP <= (int)(wildMaxHP * 0.3f));
+                catchPendingResolution = false;
+
+                if (caught && wildPokemon != null)
+                {
+                    // Save to DB if possible
+                    if (currentUser != null)
+                    {
+                        try { new PokedexDB().AddPokemonToUser(currentUser.UserId, wildPokemon.Name); } catch { /* ignore */ }
+                    }
+                    // Remove Pokeball from battle screen by ending encounter
+                    wildTextureIsPokeball = false;
+                    wildPokemonImageOriginal = null;
+                    EndWildEncounter();
+                    return;
+                }
+                else
+                {
+                    // Restore original texture and resume battle
+                    if (wildPokemonImageOriginal != null)
+                    {
+                        wildPokemonImage = wildPokemonImageOriginal;
+                    }
+                    wildTextureIsPokeball = false;
+                    isAnnouncingTurn = false;
+                    playerProtectedThisTurn = false;
+                    wildProtectedThisTurn = false;
+                    selectedMoveIndex = -1;
+                    hoveredMoveIndex = -1;
+                    needsRedraw = true;
+                    return;
+                }
+            }
+            else
+            {
+                isAnnouncingTurn = false;
+                playerProtectedThisTurn = false;
+                wildProtectedThisTurn = false;
+                selectedMoveIndex = -1;
+                hoveredMoveIndex = -1;
+                needsRedraw = true;
+                return;
+            }
         }
 
         // Handle Pokemon selection with mouse clicks
@@ -1836,6 +1928,24 @@ public partial class Form1 : Form
     {
         // Ignore clicks when announcing
         if (isAnnouncingTurn) return;
+
+        // Catch button click
+        if (!catchButtonRect.IsEmpty && catchButtonRect.Contains(e.Location) && wildPokemon != null && encounterPhase == EncounterPhase.BattleReady)
+        {
+            // Swap wild texture to Pokeball and announce
+            wildPokemonImageOriginal ??= wildPokemonImage;
+            if (smallPokeballImage != null)
+            {
+                wildPokemonImage = smallPokeballImage;
+                wildTextureIsPokeball = true;
+            }
+            turnAnnouncements.Clear();
+            turnAnnouncements.Add("You threw the Pokeball.");
+            isAnnouncingTurn = true;
+            catchPendingResolution = true;
+            needsRedraw = true;
+            return;
+        }
 
         // Calculate moves box bounds
         float boxWidth = ClientSize.Width * 0.6f;
