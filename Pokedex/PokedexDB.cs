@@ -464,5 +464,46 @@ public class PokedexDB
             return false;
         }
     }
+
+    /// <summary>
+    /// Updates the level of a specific Pokemon owned by a user
+    /// </summary>
+    /// <param name="userId">The ID of the user who owns the Pokemon</param>
+    /// <param name="pokemonName">The name of the Pokemon to update</param>
+    /// <param name="newLevel">The new level to set for the Pokemon</param>
+    /// <returns>True if the Pokemon's level was successfully updated, false otherwise</returns>
+    public bool UpdatePokemonLevel(int userId, string pokemonName, int newLevel)
+    {
+        try
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+
+            // First, get the Pokemon's ID from the Pokemon table
+            Pokemon? pokemon = getPokemonByName(pokemonName);
+            if (pokemon == null)
+            {
+                return false;
+            }
+
+            // Update the Pokemon's level in the CollectedPokemon table
+            string query = @"UPDATE CollectedPokemon 
+                           SET Level = @NewLevel 
+                           WHERE UserId = @UserId AND PokemonId = @PokemonId";
+
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@UserId", userId);
+            command.Parameters.AddWithValue("@PokemonId", pokemon.PokemonID);
+            command.Parameters.AddWithValue("@NewLevel", newLevel);
+
+            int rowsAffected = command.ExecuteNonQuery();
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error updating Pokemon level:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
+    }
 }
 

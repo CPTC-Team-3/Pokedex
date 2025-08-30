@@ -85,9 +85,9 @@ public partial class Form1 : Form
 
     // Wild Pokemon Encounter System
     /// <summary>
-    /// Chance of encountering a wild Pokemon on each step in a wild zone (5%)
+    /// Chance of encountering a wild Pokemon on each step in a wild zone
     /// </summary>
-    private const float ENCOUNTER_CHANCE = 0.05f;
+    private const float ENCOUNTER_CHANCE = 0.15f;
 
     /// <summary>
     /// Random number generator for Pokemon encounters
@@ -235,6 +235,10 @@ public partial class Form1 : Form
     private float playerSpriteAlpha = 1f, wildSpriteAlpha = 1f;
     private const float KO_FADE_DURATION = 1.0f; // seconds
 
+    // --- Tile arrival tracking for encounter checks ---
+    private int lastPlayerTileX = -1;
+    private int lastPlayerTileY = -1;
+
     /// <summary>
     /// Phases of the wild Pokemon encounter transition
     /// </summary>
@@ -324,12 +328,20 @@ public partial class Form1 : Form
         else
         {
             // Update player movement only if not in encounter
-            if (player.UpdateMovement(tiles))
+            bool movementUpdated = player.UpdateMovement(tiles);
+            if (movementUpdated)
             {
                 needsRedraw = true;
-                
-                // Check for wild Pokemon encounters when player moves
-                CheckForWildEncounter();
+            }
+
+            // Check for wild Pokemon encounters only when entering a new tile
+            int currentTileX = (int)Math.Floor(player.GetVisualX() / tileSize);
+            int currentTileY = (int)Math.Floor(player.GetVisualY() / tileSize);
+            if (currentTileX != lastPlayerTileX || currentTileY != lastPlayerTileY)
+            {
+                lastPlayerTileX = currentTileX;
+                lastPlayerTileY = currentTileY;
+                TryWildEncounterOnCurrentTile(currentTileX, currentTileY);
             }
 
             // Update camera position
@@ -359,6 +371,21 @@ public partial class Form1 : Form
                 "";
             
             this.Text = $"Pokedex Game - FPS: {currentFPS:F1} - Keys: {player.GetKeyBuffer()}{spriteInfo}{userInfo}{encounterInfo}";
+        }
+    }
+
+    /// <summary>
+    /// Called when the player enters a new tile; performs a wild encounter check for that tile.
+    /// </summary>
+    private void TryWildEncounterOnCurrentTile(int tileX, int tileY)
+    {
+        var currentTile = tiles.FirstOrDefault(t => t.X == tileX * tileSize && t.Y == tileY * tileSize);
+        if (currentTile != null && currentTile.WildZone)
+        {
+            if (encounterRandom.NextDouble() < ENCOUNTER_CHANCE)
+            {
+                StartWildEncounter();
+            }
         }
     }
 
@@ -1627,6 +1654,29 @@ public partial class Form1 : Form
     }
 
     /// <summary>
+    /// Handles key release events for player movement
+    /// </summary>
+    /// <param name="e">Key event arguments containing the released key information</param>
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        base.OnKeyUp(e);
+
+        char? keyChar = e.KeyCode switch
+        {
+            Keys.W or Keys.Up => 'W',
+            Keys.A or Keys.Left => 'A',
+            Keys.S or Keys.Down => 'S',
+            Keys.D or Keys.Right => 'D',
+            _ => null
+        };
+
+        if (keyChar.HasValue)
+        {
+            player.RemoveKeyFromBuffer(keyChar.Value);
+        }
+    }
+
+    /// <summary>
     /// Handles input during Pokemon selection phase
     /// </summary>
     private void HandlePokemonSelectionInput(KeyEventArgs e)
@@ -2096,6 +2146,23 @@ public partial class Form1 : Form
             {
                 selectedUserPokemon.Level += 1;
                 turnAnnouncements.Add($"{selectedUserPokemon.Name} leveled up to Lv.{selectedUserPokemon.Level}!");
+                
+                // Update the level in the database if the user is logged in
+                if (currentUser != null)
+                {
+                    try
+                    {
+                        PokedexDB db = new PokedexDB();
+                        if (db.UpdatePokemonLevel(currentUser.UserId, selectedUserPokemon.Name, selectedUserPokemon.Level))
+                        {
+                            turnAnnouncements.Add("Progress saved!");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error saving Pokemon level: {ex.Message}");
+                    }
+                }
             }
         }
         if (playerCurrentHP <= 0 && !playerKO)
