@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using System.Drawing.Imaging;
 
 namespace Pokedex;
 
@@ -69,7 +70,7 @@ public partial class Form1 : Form
 
     /// <summary>
     /// Flag indicating whether the game has been initialized and started
-    /// </summary>
+    /// /// </summary>
     private bool gameStarted = false;
 
     /// <summary>
@@ -218,6 +219,21 @@ public partial class Form1 : Form
         "Defensive move that blocks damage",
         "Recovers HP and removes status effects"
     };
+
+    // --- Battle turn state for move execution and announcer ---
+    private string playerSelectedMoveName = string.Empty;
+    private string wildSelectedMoveName = string.Empty;
+    private bool isAnnouncingTurn = false;
+    private readonly List<string> turnAnnouncements = new();
+    private bool playerProtectedThisTurn = false;
+    private bool wildProtectedThisTurn = false;
+
+    // --- HP, KO and fade state ---
+    private int playerMaxHP = 0, playerCurrentHP = 0;
+    private int wildMaxHP = 0, wildCurrentHP = 0;
+    private bool playerKO = false, wildKO = false;
+    private float playerSpriteAlpha = 1f, wildSpriteAlpha = 1f;
+    private const float KO_FADE_DURATION = 1.0f; // seconds
 
     /// <summary>
     /// Phases of the wild Pokemon encounter transition
@@ -407,6 +423,7 @@ public partial class Form1 : Form
     private void UpdateEncounterTransition()
     {
         encounterTimer += 1f / TARGET_FPS; // Add frame time
+        float dt = 1f / TARGET_FPS;
 
         switch (encounterPhase)
         {
@@ -504,7 +521,23 @@ public partial class Form1 : Form
                 break;
 
             case EncounterPhase.BattleReady:
-                // Battle is ready - this is the final softlock state
+                // During battle, handle KO fade-outs
+                if (wildKO)
+                {
+                    wildSpriteAlpha = Math.Max(0f, wildSpriteAlpha - dt / KO_FADE_DURATION);
+                    needsRedraw = true;
+                }
+                if (playerKO)
+                {
+                    playerSpriteAlpha = Math.Max(0f, playerSpriteAlpha - dt / KO_FADE_DURATION);
+                    needsRedraw = true;
+                }
+
+                if ((wildKO && wildSpriteAlpha <= 0f) || (playerKO && playerSpriteAlpha <= 0f))
+                {
+                    // After fade completes, end encounter, possibly level up already handled
+                    EndWildEncounter();
+                }
                 break;
         }
     }
@@ -888,7 +921,8 @@ public partial class Form1 : Form
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
             g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
             
-            g.DrawImage(wildPokemonImage, x, y, pokemonSize, pokemonSize);
+            // Draw with alpha (for fade on KO)
+            DrawImageWithAlpha(g, wildPokemonImage, new RectangleF(x, y, pokemonSize, pokemonSize), wildSpriteAlpha);
             
             // Draw wild Pokemon health bar above the Pokemon
             DrawPokemonHealthBar(g, wildPokemon, x, y - 60, pokemonSize, true);
@@ -906,7 +940,8 @@ public partial class Form1 : Form
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
             g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
             
-            g.DrawImage(selectedUserPokemonImage, x, y, pokemonSize, pokemonSize);
+            // Draw with alpha (for fade on KO)
+            DrawImageWithAlpha(g, selectedUserPokemonImage, new RectangleF(x, y, pokemonSize, pokemonSize), playerSpriteAlpha);
             
             // Draw user Pokemon health bar above the Pokemon
             DrawPokemonHealthBar(g, selectedUserPokemon, x, y - 60, pokemonSize, false);
@@ -926,6 +961,25 @@ public partial class Form1 : Form
     }
 
     /// <summary>
+    /// Draw an image with specified alpha using ColorMatrix
+    /// </summary>
+    private void DrawImageWithAlpha(Graphics g, Image image, RectangleF destRect, float alpha)
+    {
+        if (image == null) return;
+        using var attributes = new ImageAttributes();
+        var matrix = new ColorMatrix
+        {
+            Matrix00 = 1f,
+            Matrix11 = 1f,
+            Matrix22 = 1f,
+            Matrix33 = Math.Clamp(alpha, 0f, 1f), // Alpha
+            Matrix44 = 1f
+        };
+        attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+        g.DrawImage(image, Rectangle.Round(destRect), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, attributes);
+    }
+
+    /// <summary>
     /// Draws a health bar with Pokemon name above it
     /// </summary>
     /// <param name="g">Graphics context for drawing</param>
@@ -936,8 +990,13 @@ public partial class Form1 : Form
     /// <param name="isWild">Whether this is for a wild Pokemon</param>
     private void DrawPokemonHealthBar(Graphics g, Pokemon pokemon, float x, float y, float width, bool isWild)
     {
-        // Calculate health percentage (for now assume current HP = max HP)
-        float healthPercentage = 1.0f; // 100% health for now
+        // Determine current and max HP based on side
+        int maxHp = isWild ? wildMaxHP : playerMaxHP;
+        int curHp = isWild ? wildCurrentHP : playerCurrentHP;
+        if (maxHp <= 0) maxHp = Math.Max(1, pokemon.HP); // safety fallback
+        curHp = Math.Clamp(curHp, 0, maxHp);
+
+        float healthPercentage = (float)curHp / maxHp;
         
         // Health bar dimensions
         float healthBarWidth = width * 0.8f;
@@ -961,9 +1020,9 @@ public partial class Form1 : Form
             g.FillRectangle(bgBrush, healthBarX, healthBarY, healthBarWidth, healthBarHeight);
         }
 
-        // Draw current health (green to red gradient based on health)
+        // Draw current health (green/yellow/red based on thresholds)
         Color healthColor = healthPercentage > 0.5f ? Color.Green : 
-                           healthPercentage > 0.25f ? Color.Yellow : Color.Red;
+                           healthPercentage > 0.2f ? Color.Yellow : Color.Red;
         
         using (Brush healthBrush = new SolidBrush(healthColor))
         {
@@ -978,7 +1037,7 @@ public partial class Form1 : Form
         }
 
         // Draw health text
-        string healthText = $"{pokemon.HP}/{pokemon.HP}"; // For now show max/max
+        string healthText = $"{curHp}/{maxHp}";
         using (Font healthFont = new Font("Arial", 8, FontStyle.Bold))
         using (Brush healthTextBrush = new SolidBrush(Color.White))
         {
@@ -1023,6 +1082,40 @@ public partial class Form1 : Form
         using (Pen borderPen = new Pen(Color.DarkGray, 3))
         {
             g.DrawRectangle(borderPen, boxX, boxY, boxWidth, boxHeight);
+        }
+
+        // If currently announcing the turn, draw announcement text instead of options
+        if (isAnnouncingTurn)
+        {
+            using (Font titleFont = new Font("Arial", 16, FontStyle.Bold))
+            using (Brush titleBrush = new SolidBrush(Color.Black))
+            {
+                string title = "Battle Log";
+                var titleSize = g.MeasureString(title, titleFont);
+                g.DrawString(title, titleFont, titleBrush, 
+                    boxX + (boxWidth - titleSize.Width) / 2, boxY + 10);
+            }
+
+            using (Font msgFont = new Font("Arial", 11))
+            using (Brush msgBrush = new SolidBrush(Color.Black))
+            {
+                float announceStartY = boxY + 50;
+                float lineHeight = 22f;
+                foreach (var line in turnAnnouncements)
+                {
+                    g.DrawString(line, msgFont, msgBrush, boxX + 20, announceStartY);
+                    announceStartY += lineHeight;
+                }
+
+                string continueText = "Click or press any key to continue...";
+                using (Font contFont = new Font("Arial", 10, FontStyle.Italic))
+                using (Brush contBrush = new SolidBrush(Color.DarkBlue))
+                {
+                    var size = g.MeasureString(continueText, contFont);
+                    g.DrawString(continueText, contFont, contBrush, boxX + (boxWidth - size.Width) / 2, boxY + boxHeight - 25);
+                }
+            }
+            return;
         }
 
         // Draw title
@@ -1209,6 +1302,10 @@ public partial class Form1 : Form
             if (wildPokemon != null)
             {
                 LoadWildPokemonImage();
+                // Initialize wild HP and state
+                wildMaxHP = Math.Max(1, wildPokemon.HP);
+                wildCurrentHP = wildMaxHP;
+                wildKO = false; wildSpriteAlpha = 1f;
             }
             
             // Load user's actual collected Pokemon from database
@@ -1253,8 +1350,6 @@ public partial class Form1 : Form
         {
             // On error, fall back to mock data for demo purposes
             System.Diagnostics.Debug.WriteLine($"Error setting up battle with database: {ex.Message}");
-            
-            // Fallback to mock data
             var (pokemonName, pokemonType) = GetRandomPokemonData();
             wildPokemon = new Pokemon 
             { 
@@ -1269,10 +1364,12 @@ public partial class Form1 : Form
                 Level = Random.Shared.Next(5, 15)
             };
             LoadWildPokemonImage();
-            
+            wildMaxHP = Math.Max(1, wildPokemon.HP);
+            wildCurrentHP = wildMaxHP;
+            wildKO = false; wildSpriteAlpha = 1f;
+
             if (currentUser != null)
             {
-                // Mock data as fallback
                 userPokemon = new List<Pokemon>
                 {
                     new Pokemon { Name = "Bulbasaur", PokemonType1 = "Grass", HP = 80, Attack = 40, Defense = 40, SpAttack = 60, SpDefense = 60, Speed = 45 },
@@ -1426,6 +1523,11 @@ public partial class Form1 : Form
             // Create a simple placeholder on any error
             CreatePokemonPlaceholder(selectedUserPokemon.Name, out selectedUserPokemonImage);
         }
+
+        // Initialize player HP and state when image is loaded (i.e., selection confirmed)
+        playerMaxHP = Math.Max(1, selectedUserPokemon.HP);
+        playerCurrentHP = playerMaxHP;
+        playerKO = false; playerSpriteAlpha = 1f;
     }
 
     /// <summary>
@@ -1471,6 +1573,24 @@ public partial class Form1 : Form
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+
+        // If announcing and a KO occurred, ignore input and let fade/end proceed
+        if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && isAnnouncingTurn && (wildKO || playerKO))
+        {
+            return;
+        }
+
+        // If announcing, any key continues to next turn (restore move options)
+        if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && isAnnouncingTurn)
+        {
+            isAnnouncingTurn = false;
+            playerProtectedThisTurn = false;
+            wildProtectedThisTurn = false;
+            selectedMoveIndex = -1;
+            hoveredMoveIndex = -1;
+            needsRedraw = true;
+            return;
+        }
 
         // Handle battle interactions if in encounter (keyboard controls still supported as backup)
         if (inWildEncounter && encounterPhase == EncounterPhase.PokemonSelection)
@@ -1553,6 +1673,9 @@ public partial class Form1 : Form
     /// </summary>
     private void HandleMoveSelectionInput(KeyEventArgs e)
     {
+        // Ignore input when announcing
+        if (isAnnouncingTurn) return;
+
         switch (e.KeyCode)
         {
             case Keys.Up or Keys.W:
@@ -1587,8 +1710,8 @@ public partial class Form1 : Form
                 // Select the current move
                 if (selectedMoveIndex >= 0 && selectedMoveIndex < pokemonMoves.Length)
                 {
-                    // For now, just show which move was selected (functionality to be added later)
-                    System.Diagnostics.Debug.WriteLine($"Selected move: {pokemonMoves[selectedMoveIndex]}");
+                    playerSelectedMoveName = pokemonMoves[selectedMoveIndex];
+                    StartBattleTurn();
                 }
                 break;
                 
@@ -1606,6 +1729,24 @@ public partial class Form1 : Form
     protected override void OnMouseClick(MouseEventArgs e)
     {
         base.OnMouseClick(e);
+
+        // If announcing and a KO occurred, ignore input and let fade/end proceed
+        if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && isAnnouncingTurn && (wildKO || playerKO))
+        {
+            return;
+        }
+
+        // If announcing, any click continues to next turn (restore move options)
+        if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && isAnnouncingTurn)
+        {
+            isAnnouncingTurn = false;
+            playerProtectedThisTurn = false;
+            wildProtectedThisTurn = false;
+            selectedMoveIndex = -1;
+            hoveredMoveIndex = -1;
+            needsRedraw = true;
+            return;
+        }
 
         // Handle Pokemon selection with mouse clicks
         if (inWildEncounter && encounterPhase == EncounterPhase.PokemonSelection && showPokemonSelection && userPokemon != null)
@@ -1643,6 +1784,9 @@ public partial class Form1 : Form
     /// </summary>
     private void HandleMoveSelectionMouseClick(MouseEventArgs e)
     {
+        // Ignore clicks when announcing
+        if (isAnnouncingTurn) return;
+
         // Calculate moves box bounds
         float boxWidth = ClientSize.Width * 0.6f;
         float boxHeight = ClientSize.Height * 0.25f;
@@ -1673,10 +1817,10 @@ public partial class Form1 : Form
                 {
                     // Move was clicked - select it
                     selectedMoveIndex = i;
+                    playerSelectedMoveName = pokemonMoves[i];
                     needsRedraw = true;
                     
-                    // For now, just show which move was selected (functionality to be added later)
-                    System.Diagnostics.Debug.WriteLine($"Selected move: {pokemonMoves[i]}");
+                    StartBattleTurn();
                     break;
                 }
             }
@@ -1688,6 +1832,9 @@ public partial class Form1 : Form
     /// </summary>
     private void HandleMoveSelectionMouseMove(MouseEventArgs e)
     {
+        // Ignore hover when announcing
+        if (isAnnouncingTurn) return;
+
         // Calculate moves box bounds
         float boxWidth = ClientSize.Width * 0.6f;
         float boxHeight = ClientSize.Height * 0.25f;
@@ -1889,6 +2036,216 @@ public partial class Form1 : Form
             {
                 g.DrawEllipse(buttonPen, buttonX, buttonY, buttonSize, buttonSize);
             }
+        }
+    }
+
+    // ===================== Wild battle move system =====================
+
+    /// <summary>
+    /// Starts and resolves a single turn: player selects a move, enemy chooses randomly,
+    /// determines order by Speed (unless slower uses Protect), executes both, and announces.
+    /// </summary>
+    private void StartBattleTurn()
+    {
+        if (!inWildEncounter || encounterPhase != EncounterPhase.BattleReady || selectedUserPokemon == null || wildPokemon == null)
+            return;
+
+        // Store enemy move selection
+        wildSelectedMoveName = GetRandomEnemyMove();
+
+        // Reset turn state
+        turnAnnouncements.Clear();
+        playerProtectedThisTurn = false;
+        wildProtectedThisTurn = false;
+
+        // Determine who is faster (higher Speed goes first)
+        bool playerFaster = selectedUserPokemon.Speed >= wildPokemon.Speed;
+
+        // If slower uses Protect, it goes first
+        bool playerIsSlower = selectedUserPokemon.Speed < wildPokemon.Speed;
+        bool wildIsSlower = wildPokemon.Speed < selectedUserPokemon.Speed;
+
+        if (playerIsSlower && string.Equals(playerSelectedMoveName, "Protect", StringComparison.OrdinalIgnoreCase))
+        {
+            playerFaster = true; // Force player to act first
+        }
+        else if (wildIsSlower && string.Equals(wildSelectedMoveName, "Protect", StringComparison.OrdinalIgnoreCase))
+        {
+            playerFaster = false; // Force wild to act first
+        }
+
+        // Execute first mover
+        if (playerFaster)
+        {
+            ExecuteMove(selectedUserPokemon, wildPokemon, playerSelectedMoveName, isPlayer: true);
+            ExecuteMove(wildPokemon, selectedUserPokemon, wildSelectedMoveName, isPlayer: false);
+        }
+        else
+        {
+            ExecuteMove(wildPokemon, selectedUserPokemon, wildSelectedMoveName, isPlayer: false);
+            ExecuteMove(selectedUserPokemon, wildPokemon, playerSelectedMoveName, isPlayer: true);
+        }
+
+        // KO checks and announcements
+        if (wildCurrentHP <= 0 && !wildKO)
+        {
+            wildCurrentHP = 0; wildKO = true;
+            turnAnnouncements.Add($"Wild {wildPokemon.Name} fainted!");
+            // 20% level up chance
+            if (encounterRandom.NextDouble() <= 0.20)
+            {
+                selectedUserPokemon.Level += 1;
+                turnAnnouncements.Add($"{selectedUserPokemon.Name} leveled up to Lv.{selectedUserPokemon.Level}!");
+            }
+        }
+        if (playerCurrentHP <= 0 && !playerKO)
+        {
+            playerCurrentHP = 0; playerKO = true;
+            turnAnnouncements.Add($"{selectedUserPokemon.Name} fainted!");
+        }
+
+        // Show announcements in move box
+        isAnnouncingTurn = true;
+        needsRedraw = true;
+    }
+
+    /// <summary>
+    /// Execute a move by name for the given attacker and target and add announcer text.
+    /// </summary>
+    private void ExecuteMove(Pokemon attacker, Pokemon target, string moveName, bool isPlayer)
+    {
+        // Announce the move
+        turnAnnouncements.Add($"{attacker.Name} used {moveName}!");
+
+        switch (moveName)
+        {
+            case "Tackle":
+                UseTackle(attacker, target);
+                break;
+            case "Projectile":
+                UseProjectile(attacker, target);
+                break;
+            case "Protect":
+                UseProtect(attacker, target);
+                break;
+            case "Rest":
+                UseRest(attacker, target);
+                break;
+            default:
+                // Unknown move (shouldn't happen)
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Randomly selects an enemy move and stores its name.
+    /// </summary>
+    /// <returns>The selected move name.</returns>
+    private string GetRandomEnemyMove()
+    {
+        string name = pokemonMoves[encounterRandom.Next(pokemonMoves.Length)];
+        wildSelectedMoveName = name;
+        return name;
+    }
+
+    // ---- Individual move implementations ----
+
+    /// <summary>
+    /// A basic physical attack.
+    /// </summary>
+    private void UseTackle(Pokemon attacker, Pokemon target)
+    {
+        // If target protected this turn, it blocks the attack
+        if (IsProtected(target))
+        {
+            turnAnnouncements.Add($"But {target.Name} protected itself!");
+            return;
+        }
+
+        // Simple damage formula using Attack/Defense
+        int damage = Math.Max(1, ((attacker.Attack * 2) - target.Defense) / 5);
+        ApplyDamage(target, damage);
+        turnAnnouncements.Add($"It hits {target.Name} for {damage} damage!");
+    }
+
+    /// <summary>
+    /// A ranged attack using special stats.
+    /// </summary>
+    private void UseProjectile(Pokemon attacker, Pokemon target)
+    {
+        if (IsProtected(target))
+        {
+            turnAnnouncements.Add($"But {target.Name} protected itself!");
+            return;
+        }
+        int damage = Math.Max(1, ((attacker.SpAttack * 2) - target.SpDefense) / 5);
+        ApplyDamage(target, damage);
+        turnAnnouncements.Add($"A projectile strikes {target.Name} for {damage} damage!");
+    }
+
+    /// <summary>
+    /// Protect blocks incoming damage for this turn.
+    /// </summary>
+    private void UseProtect(Pokemon attacker, Pokemon target)
+    {
+        if (selectedUserPokemon != null && ReferenceEquals(attacker, selectedUserPokemon))
+        {
+            playerProtectedThisTurn = true;
+        }
+        else if (wildPokemon != null && ReferenceEquals(attacker, wildPokemon))
+        {
+            wildProtectedThisTurn = true;
+        }
+        turnAnnouncements.Add($"{attacker.Name} is shielding itself!");
+    }
+
+    /// <summary>
+    /// Rest recovers slightly.
+    /// </summary>
+    private void UseRest(Pokemon attacker, Pokemon target)
+    {
+        int healAmount;
+        if (selectedUserPokemon != null && ReferenceEquals(attacker, selectedUserPokemon))
+        {
+            healAmount = Math.Max(1, (int)(playerMaxHP * 0.2f));
+            int before = playerCurrentHP;
+            playerCurrentHP = Math.Min(playerMaxHP, playerCurrentHP + healAmount);
+            turnAnnouncements.Add($"{attacker.Name} recovers {playerCurrentHP - before} HP.");
+        }
+        else if (wildPokemon != null && ReferenceEquals(attacker, wildPokemon))
+        {
+            healAmount = Math.Max(1, (int)(wildMaxHP * 0.2f));
+            int before = wildCurrentHP;
+            wildCurrentHP = Math.Min(wildMaxHP, wildCurrentHP + healAmount);
+            turnAnnouncements.Add($"{attacker.Name} recovers {wildCurrentHP - before} HP.");
+        }
+    }
+
+    /// <summary>
+    /// Returns whether the specified Pokemon is protected for this turn.
+    /// </summary>
+    private bool IsProtected(Pokemon p)
+    {
+        if (selectedUserPokemon != null && ReferenceEquals(p, selectedUserPokemon))
+            return playerProtectedThisTurn;
+        if (wildPokemon != null && ReferenceEquals(p, wildPokemon))
+            return wildProtectedThisTurn;
+        return false;
+    }
+
+    /// <summary>
+    /// Apply damage to the target's current HP and clamp to 0.
+    /// </summary>
+    private void ApplyDamage(Pokemon target, int damage)
+    {
+        damage = Math.Max(0, damage);
+        if (wildPokemon != null && ReferenceEquals(target, wildPokemon))
+        {
+            wildCurrentHP = Math.Max(0, wildCurrentHP - damage);
+        }
+        else if (selectedUserPokemon != null && ReferenceEquals(target, selectedUserPokemon))
+        {
+            playerCurrentHP = Math.Max(0, playerCurrentHP - damage);
         }
     }
 }
