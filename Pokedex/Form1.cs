@@ -195,6 +195,31 @@ public partial class Form1 : Form
     private int selectedPokemonIndex = 0;
 
     /// <summary>
+    /// Index of the currently selected/highlighted move (0-3 for the four moves)
+    /// </summary>
+    private int selectedMoveIndex = -1;
+
+    /// <summary>
+    /// Index of the move currently being hovered over by the mouse
+    /// </summary>
+    private int hoveredMoveIndex = -1;
+
+    /// <summary>
+    /// The four universal moves that all Pokemon can use
+    /// </summary>
+    private readonly string[] pokemonMoves = { "Tackle", "Projectile", "Protect", "Rest" };
+
+    /// <summary>
+    /// Descriptions for each move
+    /// </summary>
+    private readonly string[] moveDescriptions = {
+        "A basic physical attack",
+        "Ranged attack based on Pokemon type", 
+        "Defensive move that blocks damage",
+        "Recovers HP and removes status effects"
+    };
+
+    /// <summary>
     /// Phases of the wild Pokemon encounter transition
     /// </summary>
     private enum EncounterPhase
@@ -858,16 +883,15 @@ public partial class Form1 : Form
             float x = ClientSize.Width * 0.75f - pokemonSize / 2; // Right side, more to the right
             float y = ClientSize.Height * 0.25f; // Upper portion of screen
             
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            // Use nearest neighbor interpolation for sharp pixel art
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
             
             g.DrawImage(wildPokemonImage, x, y, pokemonSize, pokemonSize);
             
             // Draw wild Pokemon health bar above the Pokemon
             DrawPokemonHealthBar(g, wildPokemon, x, y - 60, pokemonSize, true);
-            
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
         }
 
         // Draw user's Pokemon on the left side if selected (same height as wild Pokemon)
@@ -877,16 +901,15 @@ public partial class Form1 : Form
             float x = ClientSize.Width * 0.25f - pokemonSize / 2; // Left side, centered
             float y = ClientSize.Height * 0.25f; // Same height as wild Pokemon
             
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            // Use nearest neighbor interpolation for sharp pixel art
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
             
             g.DrawImage(selectedUserPokemonImage, x, y, pokemonSize, pokemonSize);
             
             // Draw user Pokemon health bar above the Pokemon
             DrawPokemonHealthBar(g, selectedUserPokemon, x, y - 60, pokemonSize, false);
-            
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
         }
 
         // Draw moves box at the bottom center of screen
@@ -1006,24 +1029,83 @@ public partial class Form1 : Form
         using (Font titleFont = new Font("Arial", 16, FontStyle.Bold))
         using (Brush titleBrush = new SolidBrush(Color.Black))
         {
-            string title = "Pokemon Moves";
+            string title = "Choose a Move";
             var titleSize = g.MeasureString(title, titleFont);
             g.DrawString(title, titleFont, titleBrush, 
                 boxX + (boxWidth - titleSize.Width) / 2, boxY + 10);
         }
 
-        // Placeholder text for moves (will be replaced with actual moves later)
-        using (Font movesFont = new Font("Arial", 12))
-        using (Brush movesTextBrush = new SolidBrush(Color.DarkGray))
+        // Draw move buttons in 2x2 grid
+        float buttonWidth = (boxWidth - 60) / 2;  // 2 columns with padding
+        float buttonHeight = 50;
+        float buttonSpacing = 20;
+        float startX = boxX + 20;
+        float startY = boxY + 50;
+
+        for (int i = 0; i < pokemonMoves.Length; i++)
         {
-            string placeholderText = "Move selection will be implemented here\n\n" +
-                                   "• Attack moves\n" +
-                                   "• Defense moves\n" +
-                                   "• Special abilities\n" +
-                                   "• Items";
+            int row = i / 2;
+            int col = i % 2;
             
-            g.DrawString(placeholderText, movesFont, movesTextBrush, 
-                boxX + 20, boxY + 50);
+            float buttonX = startX + col * (buttonWidth + buttonSpacing);
+            float buttonY = startY + row * (buttonHeight + buttonSpacing);
+
+            // Determine button color based on state
+            Color buttonColor = Color.White;
+            Color textColor = Color.Black;
+            
+            if (i == selectedMoveIndex)
+            {
+                buttonColor = Color.LightBlue;
+                textColor = Color.DarkBlue;
+            }
+            else if (i == hoveredMoveIndex)
+            {
+                buttonColor = Color.LightYellow;
+                textColor = Color.DarkOrange;
+            }
+
+            // Draw button background
+            using (Brush buttonBrush = new SolidBrush(buttonColor))
+            {
+                g.FillRectangle(buttonBrush, buttonX, buttonY, buttonWidth, buttonHeight);
+            }
+
+            // Draw button border
+            using (Pen buttonPen = new Pen(Color.Gray, 2))
+            {
+                g.DrawRectangle(buttonPen, buttonX, buttonY, buttonWidth, buttonHeight);
+            }
+
+            // Draw move name
+            using (Font moveFont = new Font("Arial", 12, FontStyle.Bold))
+            using (Brush textBrush = new SolidBrush(textColor))
+            {
+                var textSize = g.MeasureString(pokemonMoves[i], moveFont);
+                float textX = buttonX + (buttonWidth - textSize.Width) / 2;
+                float textY = buttonY + 8;
+                g.DrawString(pokemonMoves[i], moveFont, textBrush, textX, textY);
+            }
+
+            // Draw move description
+            using (Font descFont = new Font("Arial", 8))
+            using (Brush descBrush = new SolidBrush(Color.DarkGray))
+            {
+                var descSize = g.MeasureString(moveDescriptions[i], descFont);
+                float descX = buttonX + (buttonWidth - descSize.Width) / 2;
+                float descY = buttonY + 28;
+                g.DrawString(moveDescriptions[i], descFont, descBrush, descX, descY);
+            }
+        }
+
+        // Draw instructions
+        using (Font instructFont = new Font("Arial", 10))
+        using (Brush instructBrush = new SolidBrush(Color.DarkBlue))
+        {
+            string instructions = "Click on a move to select it | Arrow keys to navigate | Enter to confirm";
+            var instructSize = g.MeasureString(instructions, instructFont);
+            g.DrawString(instructions, instructFont, instructBrush, 
+                boxX + (boxWidth - instructSize.Width) / 2, boxY + boxHeight - 25);
         }
     }
 
@@ -1356,7 +1438,10 @@ public partial class Form1 : Form
         using (Graphics g = Graphics.FromImage(placeholder))
         {
             g.Clear(Color.LightGray);
+            
+            // Use high quality rendering for placeholder creation
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
             
             // Draw a simple circle
             using (Brush brush = new SolidBrush(Color.DarkGray))
@@ -1364,7 +1449,7 @@ public partial class Form1 : Form
                 g.FillEllipse(brush, 20, 20, size - 40, size - 40);
             }
             
-            // Draw Pokemon name
+            // Draw Pokemon name with clear text
             using (Font font = new Font("Arial", 10, FontStyle.Bold))
             {
                 using (Brush textBrush = new SolidBrush(Color.Black))
@@ -1393,6 +1478,12 @@ public partial class Form1 : Form
             HandlePokemonSelectionInput(e);
             return;
         }
+        // Handle move selection during battle
+        else if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && !showPokemonSelection)
+        {
+            HandleMoveSelectionInput(e);
+            return;
+        }
 
         // Normal movement handling
         char? keyChar = e.KeyCode switch
@@ -1412,34 +1503,6 @@ public partial class Form1 : Form
         else if (e.KeyCode == Keys.Escape)
         {
             this.Close();
-        }
-    }
-
-    /// <summary>
-    /// Handles mouse click events for Pokemon selection
-    /// </summary>
-    protected override void OnMouseClick(MouseEventArgs e)
-    {
-        base.OnMouseClick(e);
-
-        // Handle Pokemon selection with mouse clicks
-        if (inWildEncounter && encounterPhase == EncounterPhase.PokemonSelection && showPokemonSelection && userPokemon != null)
-        {
-            HandlePokemonSelectionMouseClick(e);
-        }
-    }
-
-    /// <summary>
-    /// Handles mouse movement for Pokemon selection highlighting
-    /// </summary>
-    protected override void OnMouseMove(MouseEventArgs e)
-    {
-        base.OnMouseMove(e);
-
-        // Handle Pokemon selection highlighting with mouse hover
-        if (inWildEncounter && encounterPhase == EncounterPhase.PokemonSelection && showPokemonSelection && userPokemon != null)
-        {
-            HandlePokemonSelectionMouseMove(e);
         }
     }
 
@@ -1482,6 +1545,190 @@ public partial class Form1 : Form
                     needsRedraw = true;
                 }
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Handles input during move selection phase
+    /// </summary>
+    private void HandleMoveSelectionInput(KeyEventArgs e)
+    {
+        switch (e.KeyCode)
+        {
+            case Keys.Up or Keys.W:
+                // Move up in 2x2 grid
+                if (selectedMoveIndex == -1) selectedMoveIndex = 0;
+                else if (selectedMoveIndex >= 2) selectedMoveIndex -= 2; // Move up one row
+                needsRedraw = true;
+                break;
+                
+            case Keys.Down or Keys.S:
+                // Move down in 2x2 grid
+                if (selectedMoveIndex == -1) selectedMoveIndex = 0;
+                else if (selectedMoveIndex < 2) selectedMoveIndex += 2; // Move down one row
+                needsRedraw = true;
+                break;
+                
+            case Keys.Left or Keys.A:
+                // Move left in 2x2 grid
+                if (selectedMoveIndex == -1) selectedMoveIndex = 0;
+                else if (selectedMoveIndex % 2 == 1) selectedMoveIndex -= 1; // Move left if not already in left column
+                needsRedraw = true;
+                break;
+                
+            case Keys.Right or Keys.D:
+                // Move right in 2x2 grid
+                if (selectedMoveIndex == -1) selectedMoveIndex = 0;
+                else if (selectedMoveIndex % 2 == 0) selectedMoveIndex += 1; // Move right if not already in right column
+                needsRedraw = true;
+                break;
+                
+            case Keys.Enter or Keys.Space:
+                // Select the current move
+                if (selectedMoveIndex >= 0 && selectedMoveIndex < pokemonMoves.Length)
+                {
+                    // For now, just show which move was selected (functionality to be added later)
+                    System.Diagnostics.Debug.WriteLine($"Selected move: {pokemonMoves[selectedMoveIndex]}");
+                }
+                break;
+                
+            case Keys.Escape:
+                // Deselect move
+                selectedMoveIndex = -1;
+                needsRedraw = true;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Handles mouse click events for Pokemon selection
+    /// </summary>
+    protected override void OnMouseClick(MouseEventArgs e)
+    {
+        base.OnMouseClick(e);
+
+        // Handle Pokemon selection with mouse clicks
+        if (inWildEncounter && encounterPhase == EncounterPhase.PokemonSelection && showPokemonSelection && userPokemon != null)
+        {
+            HandlePokemonSelectionMouseClick(e);
+        }
+        // Handle move selection with mouse clicks
+        else if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && !showPokemonSelection)
+        {
+            HandleMoveSelectionMouseClick(e);
+        }
+    }
+
+    /// <summary>
+    /// Handles mouse movement for Pokemon selection highlighting
+    /// </summary>
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+
+        // Handle Pokemon selection highlighting with mouse hover
+        if (inWildEncounter && encounterPhase == EncounterPhase.PokemonSelection && showPokemonSelection && userPokemon != null)
+        {
+            HandlePokemonSelectionMouseMove(e);
+        }
+        // Handle move selection highlighting with mouse hover
+        else if (inWildEncounter && encounterPhase == EncounterPhase.BattleReady && !showPokemonSelection)
+        {
+            HandleMoveSelectionMouseMove(e);
+        }
+    }
+
+    /// <summary>
+    /// Handles mouse clicks during move selection phase
+    /// </summary>
+    private void HandleMoveSelectionMouseClick(MouseEventArgs e)
+    {
+        // Calculate moves box bounds
+        float boxWidth = ClientSize.Width * 0.6f;
+        float boxHeight = ClientSize.Height * 0.25f;
+        float boxX = (ClientSize.Width - boxWidth) / 2;
+        float boxY = ClientSize.Height - boxHeight - 20;
+
+        // Check if click is within the moves box
+        if (e.X >= boxX && e.X <= boxX + boxWidth && e.Y >= boxY && e.Y <= boxY + boxHeight)
+        {
+            // Calculate move button bounds
+            float buttonWidth = (boxWidth - 60) / 2;
+            float buttonHeight = 50;
+            float buttonSpacing = 20;
+            float startX = boxX + 20;
+            float startY = boxY + 50;
+
+            for (int i = 0; i < pokemonMoves.Length; i++)
+            {
+                int row = i / 2;
+                int col = i % 2;
+                
+                float buttonX = startX + col * (buttonWidth + buttonSpacing);
+                float buttonY = startY + row * (buttonHeight + buttonSpacing);
+
+                // Check if click is within this button
+                if (e.X >= buttonX && e.X <= buttonX + buttonWidth && 
+                    e.Y >= buttonY && e.Y <= buttonY + buttonHeight)
+                {
+                    // Move was clicked - select it
+                    selectedMoveIndex = i;
+                    needsRedraw = true;
+                    
+                    // For now, just show which move was selected (functionality to be added later)
+                    System.Diagnostics.Debug.WriteLine($"Selected move: {pokemonMoves[i]}");
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles mouse movement during move selection phase for highlighting
+    /// </summary>
+    private void HandleMoveSelectionMouseMove(MouseEventArgs e)
+    {
+        // Calculate moves box bounds
+        float boxWidth = ClientSize.Width * 0.6f;
+        float boxHeight = ClientSize.Height * 0.25f;
+        float boxX = (ClientSize.Width - boxWidth) / 2;
+        float boxY = ClientSize.Height - boxHeight - 20;
+
+        int newHoveredIndex = -1;
+
+        // Check if mouse is within the moves box
+        if (e.X >= boxX && e.X <= boxX + boxWidth && e.Y >= boxY && e.Y <= boxY + boxHeight)
+        {
+            // Calculate move button bounds
+            float buttonWidth = (boxWidth - 60) / 2;
+            float buttonHeight = 50;
+            float buttonSpacing = 20;
+            float startX = boxX + 20;
+            float startY = boxY + 50;
+
+            for (int i = 0; i < pokemonMoves.Length; i++)
+            {
+                int row = i / 2;
+                int col = i % 2;
+                
+                float buttonX = startX + col * (buttonWidth + buttonSpacing);
+                float buttonY = startY + row * (buttonHeight + buttonSpacing);
+
+                // Check if mouse is within this button
+                if (e.X >= buttonX && e.X <= buttonX + buttonWidth && 
+                    e.Y >= buttonY && e.Y <= buttonY + buttonHeight)
+                {
+                    newHoveredIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Update hover state if it changed
+        if (newHoveredIndex != hoveredMoveIndex)
+        {
+            hoveredMoveIndex = newHoveredIndex;
+            needsRedraw = true;
         }
     }
 
@@ -1565,64 +1812,6 @@ public partial class Form1 : Form
     }
 
     /// <summary>
-    /// Gets the currently logged in user
-    /// </summary>
-    /// <returns>The current User object, or null if no user is logged in</returns>
-    public User? GetCurrentUser()
-    {
-        return currentUser;
-    }
-
-    /// <summary>
-    /// Gets the current user's username
-    /// </summary>
-    /// <returns>The username of the current user, or "Guest" if no user is logged in</returns>
-    public string GetCurrentUsername()
-    {
-        return currentUser?.Username ?? "Guest";
-    }
-
-    /// <summary>
-    /// Gets the current user's trainer level
-    /// </summary>
-    /// <returns>The trainer level of the current user, or 1 if no user is logged in</returns>
-    public int GetCurrentUserLevel()
-    {
-        return currentUser?.TrainerLevel ?? 1;
-    }
-
-    /// <summary>
-    /// Gets the current user's ID
-    /// </summary>
-    /// <returns>The user ID of the current user, or -1 if no user is logged in</returns>
-    public int GetCurrentUserId()
-    {
-        return currentUser?.UserId ?? -1;
-    }
-
-    /// <summary>
-    /// Gets the current frame rate of the game
-    /// </summary>
-    public double GetCurrentFPS()
-    {
-        return currentFPS;
-    }
-
-    /// <summary>
-    /// Allows changing the target frame rate at runtime
-    /// </summary>
-    /// <param name="newFPS">New target FPS (between 1 and 120)</param>
-    public void SetTargetFPS(int newFPS)
-    {
-        if (newFPS < 1 || newFPS > 120)
-            return;
-
-        gameTimer.Stop();
-        gameTimer.Interval = 1000 / newFPS;
-        gameTimer.Start();
-    }
-
-    /// <summary>
     /// Draws a small Pokeball indicator in the top left corner
     /// </summary>
     /// <param name="g">Graphics context for drawing</param>
@@ -1652,13 +1841,12 @@ public partial class Form1 : Form
             float pokeballX = circleX + (indicatorSize - pokeballSize) / 2;
             float pokeballY = circleY + (indicatorSize - pokeballSize) / 2;
 
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            
-            g.DrawImage(pokeballImage, pokeballX, pokeballY, pokeballSize, pokeballSize);
-            
+            // Use nearest neighbor for sharp Pokeball rendering
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+            
+            g.DrawImage(pokeballImage, pokeballX, pokeballY, pokeballSize, pokeballSize);
         }
         else
         {
